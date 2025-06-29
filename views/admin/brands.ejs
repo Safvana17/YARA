@@ -1,0 +1,145 @@
+<%- include('../../views/partials/admin/header') %>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+<style>
+  .brand-card img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+  }
+  .table img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+  }
+  .container {
+    flex-grow: 1;
+  }
+</style>
+
+<div class="container mt-5">
+
+  <!-- Add Brand Card -->
+  <div class="card p-4 mb-4 shadow-sm">
+    <h4 class="mb-3">Add New Brand</h4>
+    <form id="addBrandForm" enctype="multipart/form-data" class="row g-3">
+      <div class="col-md-4">
+        <label for="brandName" class="form-label">Brand Name</label>
+        <input type="text" class="form-control" name="brandName" id="brandName" required>
+      </div>
+      <div class="col-md-4">
+        <label for="brandLogo" class="form-label">Logo</label>
+        <input type="file" class="form-control" name="brandImage" id="brandImage" accept="image/*" required>
+      </div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-primary">Add Brand</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Brand List Table -->
+  <div class="card p-4 shadow-sm">
+    <h4 class="mb-3">Brand List</h4>
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Logo</th>
+          <th>Brand Name</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if(brands.length === 0) { %>
+            <tr><td colspan="5" class="text-center">No brands available.</td></tr>
+        <% } else {%>
+        <% brands.forEach(brand => { %>
+          <tr>
+            <td><img src="<%= brand.brandImage[0] %>" alt="logo"></td>
+            <td><%= brand.brandName %></td>
+            <td><span class="badge bg-<%= brand.isBlocked ? 'danger' : 'success' %>">
+              <%= brand.isBlocked ? 'Blocked' : 'Active' %>
+            </span></td>
+            <td>
+              <a href="/admin/brand/<%= brand.isBlocked ? 'unblock' : 'block' %>/<%= brand._id %>" class="btn btn-sm btn-<%= brand.isBlocked ? 'success' : 'warning' %>">
+                <%= brand.isBlocked ? 'Unblock' : 'Block' %>
+              </a>
+              <a href="/admin/brand/delete/<%= brand._id %>" class="btn btn-sm btn-danger" onclick="return confirm('Delete this brand?')">
+                Delete
+              </a>
+            </td>
+          </tr>
+        <% }) %>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+    <% if (totalPages > 1) { %>
+      <nav>
+         <ul class="pagination justify-content-center">
+            <% for (let i = 1; i <= totalPages; i++) { %>
+               <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                 <a class="page-link" href="/admin/brands?page=<%= i %>&search=<%= search %>"><%= i %></a>
+               </li>
+            <% } %>
+         </ul>
+      </nav>
+    <% } %>
+</div>
+
+<%- include('../../views/partials/admin/footer') %>
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.getElementById('addBrandForm').addEventListener('submit', async function(event) {
+        event.preventDefault()
+    
+        const form = document.getElementById('addBrandForm')
+        const formData = new FormData(form)
+
+        try {
+            const name = document.getElementById('brandName').value.trim()
+            const brandLogo = document.getElementById('brandImage').value
+
+            if(!name || !brandLogo ){
+                event.preventDefault()
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Field',
+                    text: 'Pease fill in required fields'
+                })
+                return
+            }
+
+            const response = await fetch('/admin/brand/add',{
+                method: 'POST',
+                body: formData
+            })
+
+            const data = await response.json()
+            if(!response.ok){
+                throw new Error( data.error ||"Something went wrong");
+                
+            }
+
+            Swal.fire({
+                icon: "success",
+                title: 'Added',
+                text: 'New brand added successfully',
+                showConfirmationButton: false,
+                timer: 1500
+            })
+            .then(()=>{
+                window.location.reload()
+            })
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message 
+            })
+        }
+    })
+</script>

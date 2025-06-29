@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YARA</title>
+  <link rel="stylesheet" href="/css/signup.css">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="container-custom">
+    <div class="illustration">
+      <img src="/images/signuplogo.png" alt="G-ROCK Logo" />
+      <p>Fashion You’ll Love, Prices You’ll Adore.</p>
+    </div>
+
+    <div class="form-section">
+      <h1>YARA</h1>
+      <p>Welcome</p>
+
+      <form id="signform" action="/login" method="POST" novalidate>
+        <div>
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Email" required />
+          <div id="error1" class="error-message"></div>
+        </div>
+        <div>
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Password" required />
+          <div id="error2" class="error-message"></div>
+        </div>
+        <div class="mt-3">
+          <a class="text-decoration-none text-success" href="/forgotpassword">Forgot password?</a>
+        </div>
+        <%if(locals.message && message.length > 0){%>
+            <div class="alert alert-danger text-center">
+                <%=message%>
+            </div>
+        <%}%>
+        <button type="submit" class="signin-btn">Login</button>
+      </form>
+
+      <div class="divider">or</div>
+
+      <button class="google-btn" onclick="location.href='/auth/google'">
+        <img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google Logo">
+        Login with Google
+      </button>
+
+      <div class="login-link">
+        Don't have an account? <a href="/signup">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const emailid = document.getElementById("email");
+    const passwordid = document.getElementById("password");
+    const error1 = document.getElementById("error1");
+    const error2 = document.getElementById("error2");
+
+
+    function validateEmail() {
+      const email = emailid.value.trim();
+      if (!email) {
+        error1.textContent = "Please enter your Email";
+        return false;
+      }
+      error2.textContent = "";
+      return true;
+    }
+
+    function validatePassword() {
+      const pass = passwordid.value;
+      if (!pass ) {
+        error2.textContent = "Please enter your password.";
+        return false;
+      }
+      error4.textContent = "";
+      return true;
+    }
+
+    document.getElementById("signform").addEventListener("submit", function(e) {
+      const valid = [ validateEmail(), validatePassword()];
+      if (valid.includes(false)) e.preventDefault();
+    });
+  </script>
+</body>
+</html>

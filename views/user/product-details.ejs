@@ -1,0 +1,176 @@
+<%- include("../../views/partials/user/navbar") %>
+
+<style>
+  .main {
+    background-color: #f5f5f5;
+    padding: 20px 0;
+  }
+
+  .product-gallery-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .main-image img {
+    width: 100%;
+    max-width: 450px;
+    height: 400px;
+    object-fit: contain;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+
+  .thumbnail-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .thumbnail {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    transition: 0.2s;
+  }
+
+  .thumbnail:hover {
+    border-color: #ff6b6b;
+  }
+
+  .size-btn {
+    padding: 8px 16px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .size-btn.selected {
+    background: #333;
+    color: white;
+    border-color: #333;
+  }
+
+  .product-extra-link2 .button {
+    margin-top: 10px;
+    background-color: #ff6b6b;
+    border: none;
+    padding: 10px 20px;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .product-extra-link2 .button:hover {
+    background-color: #e55353;
+  }
+
+</style>
+<script src="https://unpkg.com/js-image-zoom@0.4.1/js-image-zoom.js" type="application/javascript"></script>
+<main class="main">
+  <div class="container">
+    <div class="row">
+      <!-- Left: Product Image Gallery -->
+      <div class="col-md-6">
+        <div class="product-gallery-container">
+          <div class="main-image" id="main-image-container">
+            <img id="mainPreview" src="<%= product.productImage[0] %>" alt="Main product image" />
+          </div>
+          <div class="thumbnail-row">
+            <% product.productImage.forEach((img, index) => { %>
+              <img class="thumbnail" src="<%= img %>" onclick="previewImage('<%= img %>')" alt="Thumbnail <%= index + 1 %>" />
+            <% }) %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Product Info -->
+      <div class="col-md-6">
+        <h2><%= product.name %></h2>
+        <p><strong>Brand:</strong> <%= product.brand.brandName %></p>
+        <p><strong>Category:</strong> <%= category.name %></p>
+        <p><strong>Description:</strong> <%= product.description %></p>
+        <p><strong>Price:</strong> ₹<%= product.salePrice %>
+          <% if(product.salePrice !== product.regularPrice) { %>
+            <span style="text-decoration: line-through; color: grey;">₹<%= product.regularPrice %></span>
+          <% } %>
+        </p>
+        <p><strong>Status:</strong> 
+          <% if(totalStock > 0) { %>
+            <span style="color:green;">In Stock</span>
+          <% } else { %>
+            <span style="color:red;">Out of Stock</span>
+          <% } %>
+        </p>
+
+        <!-- Variant Sizes -->
+        <div>
+          <p><strong>Select Size:</strong></p>
+          <% variants.forEach(variant => { %>
+            <button class="size-btn" data-size="<%= variant.size %>" data-price="<%= variant.salePrice %>">
+              <%= variant.size %>
+            </button>
+          <% }) %>
+        </div>
+
+        <div class="product-extra-link2">
+          <input type="hidden" id="selectedSize" />
+          <button class="btn btn-success m-3">Add to Cart</button>
+          <a class="btn btn-info text-decoration-none" href="#" style="margin-left:10px;"> Wishlist</a>
+        </div>
+
+        <!-- Policies -->
+        <ul style="margin-top: 20px;">
+          <li>✅ 1 Year Brand Warranty</li>
+          <li>🔄 30 Day Return Policy</li>
+          <li>💰 Cash on Delivery available</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    <div class="mt-5">
+      <h4>Related Products</h4>
+      <div class="row">
+        <% relatedProducts.forEach(item => { %>
+          <div class="col-md-3 col-sm-6 mt-3">
+            <div style="border:1px solid #ddd; padding:10px; border-radius:5px;">
+              <a class="text-decoration-none text-dark" href="/productDetails?id=<%= item._id %>">
+                <img src="<%= item.productImage[0] %>" alt="<%= item.name %>" style="width:100%; height:180px; object-fit:contain;">
+                <h6 class="mt-2"><%= item.name %></h6>
+                <p>₹<%= item.salePrice %>
+                  <% if(item.salePrice !== item.regularPrice) { %>
+                    <span style="text-decoration: line-through; color:grey;">₹<%= item.regularPrice %></span>
+                  <% } %>
+                </p>
+              </a>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+
+// var options = {
+//   zoomWidth: 700,
+//   offset: {vertical: 10, horizontal: 50},
+// }
+
+// new ImageZoom(document.getElementById('main-image-container'), options)
+  function previewImage(src) {
+    document.getElementById('mainPreview').src = src;
+  }
+
+</script>
+
+<%- include("../../views/partials/user/footer") %>

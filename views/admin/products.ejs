@@ -1,0 +1,106 @@
+<%-include('../../views/partials/admin/header')%>
+<style>
+    .container {
+        flex-grow: 1;
+    }
+</style>
+<div class="container">
+<h2 class="mb-4 mt-5">All Products</h2>
+<form action="/admin/products" method="get" class="mb-3 d-flex mt-2">
+    <input type="text" name="search" class="form-control me-2" placeholder="Search by product name" value="<%= search %>" />
+    <button type="submit" class="btn btn-outline-danger">Search</button>
+</form>
+<% if(search && search.trim() !== '') {%>
+    <p>Showing Result for: "<strong><%= search %></strong>"</p>
+<% } %>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Product Name</th>
+            <th>Brand</th>
+            <th>Category</th>
+            <th>Regular Price</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if(products.length === 0) { %>
+            <tr>
+                <td class="text-center text-muted" colspan="10">No products found!</td>
+            </tr>
+        <% } %>
+        <% products.forEach(product => {%>
+            <tr>
+                <td><%= product.name %></td>
+                <td><%= product.brand?.brandName || '-' %></td>
+                <td><%= product.category?.name || '-' %></td>
+                <td><%= product.regularPrice %></td>
+                <td><%= product.totalStock %> </td>
+                <td><%= product.status %></td>
+                <td>
+                    <button class="btn btn-sm <%= product.isBlocked ? 'btn-success' : 'btn-warning'%> toggle-block-btn" data-product-id="<%= product._id %>" data-blocked="<%= product.isBlocked %>" >
+                        <%= product.isBlocked ? 'Unblock': 'Block' %>
+                    </button>
+                     <a href="/admin/edit-product/<%= product._id %>" class="btn btn-sm btn-outline-primary">Edit</a>                  
+                </td>
+            </tr>
+        <% }) %>
+    </tbody>
+</table>
+
+<p><%= sum %></p>
+<nav>
+  <ul class="pagination justify-content-center">
+    <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i == currentPage ? 'active' : '' %>">
+        <a class="page-link" href="/admin/products?page=<%= i %>&search=<%= search %>"><%= i %></a>
+      </li>
+    <% } %>
+  </ul>
+</nav>
+</div>
+<%-include('../../views/partials/admin/footer')%>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
+<script>
+    document.querySelectorAll('.toggle-block-btn').forEach(button =>{
+        button.addEventListener('click', async function () {
+            const productId = this.dataset.productId
+            const isBlocked = this.dataset.blocked === 'true'
+
+            try {
+                const response = await fetch(`/admin/product/${isBlocked ? 'unblock' : 'block'}/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        'x-requested-with': 'XMLHttpRequest'
+                    }
+                })
+                const data = await response.json()
+                if(data.success){
+                    location.reload()
+                }else{
+                    Swal.fire({
+                        icon:'error',
+                        title: 'Failed!!',
+                        text: data.message || 'Failed to toggle block status',
+                        timer: 1200,
+                        showConfirmButton: false
+                    })
+                }
+
+            } catch (error) {
+                console.error('Error while block/unblock products', error)
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occured, Please try again',
+                    timer: 1200,
+                    showConfirmButton: false
+                })
+            }
+        })
+    })
+</script>

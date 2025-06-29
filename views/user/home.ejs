@@ -1,0 +1,329 @@
+<%- include('../../views/partials/user/navbar') %>
+   <style>
+      .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #ff6b6b;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s, transform 0.3s;
+      cursor: pointer;
+      text-align: center;
+  }
+
+
+  .btn:hover {
+      background-color: #ff4c4c;
+      transform: translateY(-2px);
+  }
+
+
+  .btn:active {
+      transform: translateY(1px);
+  }
+  .wishlist-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 50%;
+      color: #ff6b6b;
+      font-size: 18px;
+      z-index: 10;
+      transition: background-color 0.3s, color 0.3s, transform 0.3s;
+  }
+
+
+  .wishlist-btn:hover {
+      background-color: rgba(255, 255, 255, 1);
+      color: #ff4c4c;
+      transform: translateY(-2px);
+  }
+
+
+  .wishlist-btn:active {
+      transform: translateY(1px);
+  }
+   .section-title h2 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #252525;
+  }
+   
+  .product-img-action-wrap {
+      position: relative;
+  }
+
+
+  .product-img {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      width: 100%;
+      height: 250px;
+      border-radius: 5px;
+  }
+  .product-img img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+  }
+
+
+  .product-cart-wrap {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    transition: box-shadow 0.3s ease;
+    background-color: #fff;
+    height: 100%;
+  }
+  .product-cart-wrap:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+
+    .product-content-wrap {
+    padding-top: 10px;
+    text-align: center;
+  }
+   .product-content-wrap h6 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    margin: 10px 0 5px;
+    height: 40px;
+    overflow: hidden;
+  }
+
+
+  .product-content-wrap h5 {
+      font-size: 1.1rem;
+      color: #ff6b6b;
+      margin-bottom: 10px;
+  }
+
+
+  .product-content-wrap a {
+      display: inline-block;
+      padding: 8px 12px;
+      background-color: #ff6b6b;
+      color: white;
+      text-transform: uppercase;
+      font-size: 14px;
+      border-radius: 4px;
+      text-decoration: none;
+  }
+
+
+  .product-content-wrap a:hover {
+      background-color: #ff4c4c;
+  }
+  .single-slider-img img {
+    max-height: 520px; /* adjust this value as needed */
+    object-fit: cover;
+}
+.brand-section {
+  padding: 40px 0;
+  background-color: #f5f4f4;
+}
+
+.brand-logo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+}
+
+.brand-logo img {
+  max-width: 120px;
+  max-height: 60px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  /* filter: grayscale(100%); */
+  opacity: 0.8;
+}
+
+.brand-logo img:hover {
+  transform: scale(1.1);
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+.promo-poster {
+  position: relative;
+  height: 300px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s;
+}
+
+.promo-poster:hover {
+  transform: scale(1.02);
+}
+
+.promo-overlay {
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 30px;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.promo-overlay h3 {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+
+ @media (max-width: 768px) {
+    .product-img img {
+      height: 200px;
+    }
+  }
+   </style>
+   <header class="hero-section">
+    <div class="hero-content">
+        <h1>Welocome to YARA</h1>
+        <P>Style that defines you</P>
+        <a href="/shop">
+            <button class="btn btn-info" >Shop Now</button>
+        </a>
+    </div>
+   </header>
+ <section id="company-services">
+    <div class="container my-5">
+      <div class="row">
+        <div class="icon-box-wrapper d-flex flex-wrap justify-content-between">
+          <div class="icon-box text-center col-md-3 col-sm-12">
+            <div class="content-box border-top border-bottom">
+              <div class="icon-box-icon">
+                <!-- <i class="bi bi-truck"></i>  -->
+              </div>
+              <div class="icon-content">
+                <h3 class="no-margin">Quick delivery</h3>
+                <p>Inside City delivery within 5 days</p>
+              </div>
+            </div>
+          </div>
+          <div class="icon-box text-center col-md-3 col-sm-12">
+            <div class="content-box border-top border-bottom">
+              <div class="icon-box-icon">
+                <!-- <i class="bi bi-shop"></i>  -->
+              </div>
+              <div class="icon-content">
+                <h3 class="no-margin">Pick up in store</h3>
+                <p>We have option of pick up in store.</p>
+              </div>
+            </div>
+          </div>
+          <div class="icon-box text-center col-md-3 col-sm-12">
+            <div class="content-box border-top border-bottom">
+              <div class="icon-content">
+                <h3 class="no-margin">Special packaging</h3>
+                <p>Our packaging is best for products.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+<section class="product spad">
+  <div class="container">
+    <div class="section-title text-center">
+      <h2>Latest Products</h2>
+    </div>
+    <div class="row">
+      <% latestproducts.forEach(product => { %>
+        <div class="col-lg-3 col-md-4 col-12 col-sm-6">
+          <div class="product-cart-wrap mb-30">
+            <div class="product-img-action-wrap">
+              <div class="product-img product-img-zoom">
+                <a href="/productDetails?id=<%= product._id %>">
+                  <img class="default-img" src="<%= product.productImage[0] %>" alt="<%= product.name %>">
+                </a>
+              </div>
+            </div>
+            <div class="product-content-wrap">
+              <h6><%= product.name %></h6>
+              <h5>₹<%= product.salePrice %></h5>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</section>
+<section class="brand-section mt-4">
+<div class="container">
+  <div class="row">
+    <div class="brand-logo">
+      <% brands.forEach(brand => { %>
+        <img src="<%= brand.brandImage %>" alt="<%= brand.brandName %>">
+      <% }) %>
+    </div>
+  </div>
+</div>
+</section>
+
+
+<section class="promo-poster-section py-5">
+  <div class="container">
+    <div class="section-title text-center mb-4">
+      <h2>Explore Our Collections</h2>
+    </div>
+    <div class="row g-4">
+      <!-- Modest Wear -->
+      <div class="col-md-4">
+        <div class="promo-poster" style="background-image: url('/images/abaya.jpg');">
+          <div class="promo-overlay text-center text-white">
+            <h3>Modest Wear</h3>
+            <a href="/shop" class="btn btn-light mt-2">Shop Now</a>
+          </div>
+        </div>
+      </div>
+      <!-- Daily Wear -->
+      <div class="col-md-4">
+        <div class="promo-poster" style="background-image: url('/images/kurti.webp');">
+          <div class="promo-overlay text-center text-white">
+            <h3>Daily Wear</h3>
+            <a href="/shop" class="btn btn-light mt-2">Shop Now</a>
+          </div>
+        </div>
+      </div>
+      <!-- Jackets -->
+      <div class="col-md-4">
+        <div class="promo-poster" style="background-image: url('/images/jackets.webp');">
+          <div class="promo-overlay text-center text-white">
+            <h3>Jackets</h3>
+            <a href="/shop" class="btn btn-light mt-2">Shop Now</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../../views/partials/user/footer') %>
+  <!-- Bootstrap Bundle JS (includes Popper) -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+</body>
+</html>

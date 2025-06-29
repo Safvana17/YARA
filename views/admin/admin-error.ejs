@@ -1,0 +1,69 @@
+<%-include('../../views/partials/admin/header')%>
+
+<style>
+  /* body {
+    background: linear-gradient(135deg, #800000, #990f02);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+    color: #fff;
+  } */
+
+  .error-box {
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    text-align: center;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 15px;
+    color: #800000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .error-icon svg {
+    margin-top: 200px;
+    margin-bottom: 20px;
+    stroke: #800000;
+  }
+
+  .error-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+  }
+
+  .error-text {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+
+  .btn-maroon {
+    background-color: #800000;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    transition: 0.3s;
+  }
+
+  .btn-maroon:hover {
+    background-color: #b30000;
+  }
+</style>
+
+      <div class="container error-box">
+        <div class="error-image">
+            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" fill="none" viewBox="0 0 24 24" stroke="#990f02" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+        </div>
+        <h1 class="display-4 fw-bold">ERROR PAGE ADMIN</h1>
+        <P class="lead mb-4">An error occured!!</P>
+        <a href="/admin" class="btn btn-outline-danger"> Go to Home</a>
+      </div>
+<%-include('../../views/partials/admin/footer')%>

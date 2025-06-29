@@ -1,0 +1,43 @@
+html, body {
+    height: 100%;
+}
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.navbar-content {
+     min-height: 100vh;
+     display: flex;
+}
+.header {
+    width: 100%;
+    padding: 10px 20px;
+    display: flex;
+   align-items: center;
+   justify-content: flex-end;
+    border-bottom: 1px solid #0000;
+}
+.sidebar {
+    background-color: maroon;
+    width: 200px;
+    padding-top:20px;
+    flex-shrink: 0;
+    color: white;
+}
+.sidebar a {
+    text-decoration: none;
+    color: white;
+    padding: 12px 20px;
+    display: block;
+    cursor: pointer;
+    font-weight: 600;
+}
+.sidebar a:hover {
+    background-color: rgb(161, 100, 100);
+    color: white;
+}
+.header-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}

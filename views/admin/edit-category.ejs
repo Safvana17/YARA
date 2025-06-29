@@ -1,0 +1,76 @@
+<%- include("../../views/partials/admin/header") %>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 mt-60">
+            <h1>Edit Category</h1>
+            <form id="editCategoryForm">
+                
+                <div class="mb-4 mt-30">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" id="name" name="name" value="<%=category.name%>" class="form-control border" />
+                </div>
+                
+                <div class="mb-4">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-control border"><%=category.description%></textarea>
+                </div>
+                <% if (error) { %>
+                    <div class="alert alert-danger"><%=error%></div>
+                    <% } %>
+
+                <div class="d-grid text-end mt-30 col-md-5">
+                    <button class="btn btn-primary" type="submit">Update Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<%- include("../../views/partials/admin/footer") %>
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.getElementById('editCategoryForm').addEventListener('submit', async function(event) {
+        event.preventDefault()
+
+        const id = '<%= category._id %>'
+        const name = document.getElementById('name').value.trim()
+        const description = document.getElementById('description').value.trim()
+
+        try {
+            const response = await fetch(`/admin/category/edit/${id}`,{
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({name, description})
+            })
+
+            const data = await response.json()
+            if(!response.ok){
+               Swal.fire({
+                icon:"error",
+                title: 'Oops',
+                text: data.error || "Something went wrong"
+               })
+            }else {
+                Swal.fire({
+                    icon: "success",
+                    title: 'Updated',
+                    text: 'Category updated successfully',
+                    showConfirmationButton: false,
+                    timer: 1500
+                }).then(()=>{
+                    window.location.href = '/admin/category'
+                })
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to update category, Please try again.'
+            })
+        }
+
+    })
+</script>

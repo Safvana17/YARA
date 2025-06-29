@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YARA | ADMIN</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <style>
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #4b0000;
+      color: white;
+      flex-shrink: 0;
+      padding-top: 20px;
+    }
+
+    .sidebar a {
+      display: block;
+      color: white;
+      padding: 12px 20px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .sidebar a:hover {
+      background-color: #543535;
+      color: #fff;
+    }
+
+    .content {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .header {
+      background-color: #660000;
+      padding: 10px 20px;
+      border-bottom: 1px solid #dee2e6;
+      display: flex;
+      text-align: center;
+    }
+    .footer {
+      background-color: #660000;
+      padding: 10px 20px;
+      border-top: 1px solid #dee2e6;
+      text-align: center;
+    }
+
+    .main {
+      flex-grow: 1;
+      padding: 20px;
+      background-color: #fff;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <nav class="sidebar min-vh-100">
+      <a href="/admin"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+      <a href="/admin/customers"><i class="bi bi-people me-2"></i>Customers</a>
+      <a href="/admin/category"><i class="bi bi-tags me-2"></i>Category</a>
+      <a href="/admin/brands"><i class="bi bi-award me-2"></i>Brands</a>
+      <a href="/admin/add-products"><i class="bi bi-plus-square me-2"></i>Add Product</a>
+      <a href="/admin/products"><i class="bi bi-box-seam me-2"></i>Products</a>
+      <a href="/admin/coupons"><i class="bi bi-ticket-perforated me-2"></i>Coupons</a>
+      <a href="/admin/banners"><i class="bi bi-image me-2"></i>Banners</a>
+      <a href="/admin/orders"><i class="bi bi-receipt-cutoff me-2"></i>Orders</a>
+      <a href="/admin/referrals"><i class="bi bi-share me-2"></i>Referrals</a>
+      <a href="/admin/profile"><i class="bi bi-person-circle me-2"></i>Admin Profile</a>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="content">
+      <!-- Header -->
+      <header class="header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0 text-white">YARA </h3>
+        <a href="/admin/logout" class="btn btn-outline-light btn-sm">Logout</a>
+      </header>
+      <main class="main">

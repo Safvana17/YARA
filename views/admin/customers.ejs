@@ -1,0 +1,71 @@
+<%- include('../../views/partials/admin/header') %>
+<style>
+  .container {
+    flex-grow: 1;
+  }
+</style>
+<div class="container mt-5 ml-5">
+  <h1>Customers</h1>
+  <form action="/admin/customers" method="post" class="d-flex mb-3">
+    <input type="search" name="search" class="form-control me-2" id="search" placeholder="Search Customers..." value="<%= search %>">
+    <button type="submit" class="btn btn-outline-danger" >Search</button>
+  </form>
+  <table class="table table-bordered table-striped" >
+    <thead class="table-dark">
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if(user.length < 0) { %>
+        <tr>
+          <td class="text-center" colspan="6">No users available</td>
+        </tr>
+      <% } %>
+      <% user.forEach((user, index)=> { %>
+      <tr>
+        <td><%= (currentPage - 1 ) * 3 + index + 1 %></td>
+        <td><%= user.name %></td>
+        <td><%= user.email %></td>
+        <td><%= user.phone || '-'  %></td>
+        <td>
+          <% if(user.isBlocked) { %>
+            <span class="badge text-danger">Blocked</span>
+          <% } else { %>
+            <span class="badge text-success">Active</span>
+          <% } %>
+        </td> 
+        <td>
+          <% if(user.isBlocked) { %>
+            <a href="/admin/unblock/<%= user._id %>" class="text-success" title="Unblock <%= user.name%>"><i class="bi bi-unlock-fill fs-5"></i></a>
+          <% } else { %>
+            <a href="/admin/block/<%= user._id %>" class="text-danger" title="block <%= user.name %>"><i class="bi bi-lock-fill fs-5"></i></a>
+          <% } %>
+          <a href="/admin/viewcustomer/<%= user._id %>" class="text-info" title="view <%= user.name %>"><i class="bi bi-eye-fill fs-5"></i></a>
+        </td> 
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <!-- pagination -->
+  <% if(totalPages > 1) { %>
+    <nav>
+      <ul class="pagination justify-content-center">
+        <% for(let i=1; i<=totalPages; i++) { %>
+          <li class="page-item <%= i=== currentPage ? 'Active' : '' %>">
+            <a class="page-link" href="/admin/customers?page=<%= i %>&search=<%= search %>"><%= i %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
+</div>
+
+      
+<%- include('../../views/partials/admin/footer') %>

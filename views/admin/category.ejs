@@ -1,0 +1,165 @@
+<%- include('../../views/partials/admin/header') %>
+<style>
+   .card {
+    width: 50%;
+    margin: auto;
+   }
+   /* .form-control {
+    width: 100%;
+   } */
+    .pagination {
+        margin-top: 30px;
+        z-index: 1;
+        margin-bottom: 2rem;
+    }
+</style>
+<div class="container mt-1 mb-5">
+    <h1>Category</h1>
+    <!-- <form action="/admin/category" method="post" class="d-flex mb-3">
+        <input type="search" name="search" id="search" class="form-control me-2" placeholder="Serach category..." value="<%=search %>" >
+        <button type="submit" class="btn btn-outline-danger">Search</button>
+    </form> -->
+    <div class="card shadow-sm p-4 mt-4 mb-4">
+        <h4 class="text-center">Add New Category</h4>
+        <form method="post" onsubmit="handleFormSubmit(event)">
+            <div class="col-md-6">
+                <label for="name" class="form-label">Category Name</label>
+                <input type="text" class="form-control" name="name" id="name" placeholder="Category Name">
+                <p class="error-message" id="error1"></p>
+            </div>
+            <div class="col-md-6">
+                <label for="description" class="form-label">Description</label>
+                <textarea name="description" class="form-control" id="description" placeholder="Description..."></textarea>
+                <p class="error-message" id="error2"></p>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Category</button>
+        </form>
+    </div>
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Category Name</th>
+                <th>Description</th>
+                <th>Staus</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if(categories.length === 0) { %>
+                <tr><td colspan="5" class="text-center">No categories available</td></tr>
+            <% } else { %>
+                <% categories.forEach((cat, index)=> { %>
+                <tr>
+                    <td><%= (currentPage -1) * 3 + index + 1 %></td>
+                    <td><%= cat.name %></td>
+                    <td><%= cat.description || 'N/A' %></td>
+                    <td><span class="badge <%= cat.isListed ? 'text-success' : 'text-danger' %>">
+                        <%= cat.isListed ? 'Listed' : 'Unlisted' %>
+                    </span></td>
+                    <td>
+                        <a href="/admin/category/edit/<%= cat._id %>" class="btn btn-info">Edit</a>
+                        <a href="/admin/category/<%=cat._id %>/<%= cat.isListed ? 'unlist' : 'list'%>" class="btn btn-<%= cat.isListed ? 'danger' : 'success' %>">
+                            <%= cat.isListed ? 'Unlist': 'List' %>
+                        </a>
+                    </td>
+                </tr>
+                <% }) %>
+            <% } %>
+        </tbody>
+    </table>
+    <% if(totalPages > 1) { %>
+        <nav class="mb-5">
+            <ul class="pagination justify-content-center">
+               <% for(let i=1; i<=totalPages; i++){ %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a  class="page-link" href="/admin/category?page=<%= i %>&search=<%= search %>"><%= i %></a>
+                </li>
+               <% } %>
+            </ul>
+        </nav>
+    <% } %>
+</div>
+
+
+
+
+
+<%- include('../../views/partials/admin/footer') %>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function handleFormSubmit(event){
+        event.preventDefault()
+        if(!validateForm()){
+            return
+        }
+        const name = document.getElementById('name').value
+        const description = document.getElementById('description').value
+
+        fetch('/admin/addcategory',{
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({name, description})
+        })
+        .then(response =>{
+            if(!response.ok){
+                return response.json().then(err =>{
+                     throw new Error(err.error);
+                })
+            }
+            return response.json()
+        })
+        .then(data =>{
+            location.reload()
+        })
+        .catch(error =>{
+            if(error.message === 'Category already exists'){
+                Swal.fire({
+                    icon:"error",
+                    title: 'Oops',
+                    text: 'Category already exists'
+                })
+            }else{
+                Swal.fire({
+                    icon:'error',
+                    title:"Oops",
+                    text: 'An error occured while adding a category'
+                })
+            }
+        })
+    }
+
+    function validateForm(){
+        clearErrorMessage()
+        const name = document.getElementsByName('name')[0].value
+        const description = document.getElementById('description').value.trim()
+
+        isValid = true
+        if(name === ''){
+            displayErrorMessage('error-1', 'Please enter a name')
+            isValid = false
+        }else if(!/^[a-zA-Z\s]+$/.test(name)){
+            displayErrorMessage('error1', 'Category name should contain only alphabetic characters.')
+            isValid = false
+        }
+        if(description === ''){
+            displayErrorMessage('error2', 'Please enter a desrciption')
+            isValid = false
+        }
+        return isValid
+    }
+    function displayErrorMessage(elementId, message){
+        var errorElement = document.getElementById(elementId)
+        errorElement.innerText = message
+        errorElement.style.display = 'block'
+    }
+    function clearErrorMessage(){
+        const errorElements = document.getElementsByClassName('error-message')
+        Array.from(errorElements).forEach((element)=>{
+            element.innerText = ''
+            element.style.display = 'none'
+        })
+    }
+</script>

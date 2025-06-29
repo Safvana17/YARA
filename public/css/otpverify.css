@@ -1,0 +1,83 @@
+body {
+    margin: 0;
+    background: white;
+    color: rgb(3, 80, 3);
+  
+}
+
+.container {
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+   
+}
+.otp-box {
+    border: 1px solid #ccc;
+    box-shadow: 0 8px 20px rgb(0, 0, 28);
+    padding: 2rem 2.5rem;
+    width: 350px;
+    border-radius: 12px;
+    position: relative;
+    text-align: center;
+}
+.otp-box img {
+    width: 50px;
+    margin-top: 3px;
+}
+.otp-box h1 {
+    margin-bottom: 5px;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: green;
+}
+.otp-input input {
+    width: 50%;
+    padding: 4px 10px;
+    border-radius: 10px;
+    outline: none;
+    border: 1px solid #dfdbdb;
+    text-align: center;
+    font-size: 1.5rem;
+}
+.otp-input button {
+    margin: 7px;
+    border-radius: 10px;
+    background-color: black;
+    color: white;
+    border: 1px solid black;
+    padding: 0.7rem 2.5rem;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.loginLink {
+    margin-top: 5px;
+}
+.loginLink a {
+    text-decoration: none;
+    color: green;
+}
+.resendOTP button {
+    margin-top: 5px;
+    border-radius: 7px;
+    background-color: black;
+    color: white;
+    padding: 0.6rem 2rem;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+
+}
+
+
+    @media (max-width: 480px) {
+  .otp-box {
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
