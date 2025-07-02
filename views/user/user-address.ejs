@@ -1,0 +1,74 @@
+<%- include("../../views/partials/user/navbar") %>
+
+<div class="container-fluid mt-5 mb-5">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+      <div class="list-group shadow-sm">
+        <%- include("../../views/partials/user/sidebar") %>
+      </div>
+    </div>
+
+    <!-- Address Section -->
+    <div class="col-md-9">
+      <h4 class="mb-4">My Addresses</h4>
+
+      <% if (!addressData || addressData.address.length === 0) { %>
+        <div class="alert alert-warning text-center">
+          No user address available.
+        </div>
+      <% } else { %>
+        <div class="row">
+          <% addressData.address.forEach((addr, index) => { %>
+            <div class="col-md-6 mb-4">
+              <div class="card p-3 shadow-sm">
+                <h6><%= addr.addressType %> Address</h6>
+                <p><strong>Name:</strong> <%= addr.name %></p>
+                <p><strong>House No:</strong> <%= addr.houseNo %></p>
+                <p><strong>City:</strong> <%= addr.city %>, <%= addr.state %> - <%= addr.pinCode %></p>
+                <p><strong>Landmark:</strong> <%= addr.landMark %></p>
+                <p><strong>Phone:</strong> <%= addr.phone %> | <strong>Alt:</strong> <%= addr.altPhone %></p>
+
+                <div class="d-flex gap-2">
+                  <a href="/edit-address/<%= addr._id %>" class="btn btn-sm btn-outline-primary">Edit</a>
+                  <button onclick="deleteAddress('<%= addr._id %>')" class="btn btn-sm btn-outline-danger">Delete</button>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <div class="text-end">
+        <a href="/add-address" class="btn btn-success mt-3">+ Add New Address</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>
+
+<script>
+  async function deleteAddress(addressId) {
+    const confirmDelete = confirm("Are you sure you want to delete this address?");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/delete-address/${addressId}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        alert('Address deleted successfully');
+        location.reload(); // Optional: You can re-render instead of reload
+      } else {
+        alert(result.message || 'Delete failed');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Something went wrong');
+    }
+  }
+</script>

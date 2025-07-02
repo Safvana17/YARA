@@ -1,0 +1,336 @@
+<%- include("../../views/partials/user/navbar") %>
+<style>
+    .profile-pic-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .edit-icon {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: #ffffff;
+        border-radius: 50%;
+        padding: 6px;
+        cursor: pointer;
+    }
+    .edit-icon i {
+        font-size: 16px;
+        color: #000;
+    }
+    .hidden-file-input {
+        display: none;
+    }
+    .error-message {
+        color: red;
+    }
+</style>
+<!-- <link rel="stylesheet" href="/css/userprofile.css"> -->
+<div class="conatiner mt-5 mb-5">
+    <div class="row">
+        <!-- sidebar -->
+         <div class="col-md-3">
+              <%- include("../../views/partials/user/sidebar") %>
+         </div>
+         <!-- Profile information -->
+          <div class="col-md-9">
+            <h4 class="mb-4">Personal Information</h4>
+            <!-- profile image -->
+            <!-- Profile Picture Update Form -->
+            <div class="text-center mb-3">
+                <form enctype="multipart/form-data" id="profilePicForm">
+                    <div class="profile-pic-wrapper">
+                        <img src="<%= user.profileImage ? ('/images/'+user.profileImage) : '/images/user-profile.png' %>" class="rounded-circle" width="120" height="120" alt="profile image" id="profileImagePreview">
+                        <label class="edit-icon">
+                            <i class="bi bi-pencil-fill"></i>
+                            <input type="file" name="profileImage" accept="image/*" class="hidden-file-input" id="profileImageInput" onchange="document.getElementById('profilePicForm').submit();" />
+                        </label>
+                    </div>
+                </form>
+            </div>
+             <form id="updateProfileForm">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" value="<%= user.name %>" id="name" name="name" class="form-control">
+                    <div class="error-message" id="name-error"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" value="<%= user.email %>" class="form-control" disabled>
+                     <a href="/change-email" class="btn btn-sm btn-link">Change Email</a>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" name="phone" id="phone" value="<%= user.phone %>" class="form-control">
+                    <div class="error-message" id="phone-error"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Gender</label><br/>
+                    <div class="form-check form-check-inline">
+                        <input type="radio" name="gender" class="form-check-input" value="Male" <%= user.gender === 'Male' ? 'checked' : '' %> id="">
+                        <label class="form-check-label">Male</label>
+                    </div>
+                     <div class="form-check form-check-inline">
+                        <input type="radio" name="gender" class="form-check-input" value="Female" <%= user.gender === 'Female' ? 'checked' : '' %> id="">
+                        <label class="form-check-label">Female</label>
+                    </div>
+                    <div class="error-message" id="gender-error"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+             </form>
+
+                   <!-- Change Password -->
+      <hr class="my-4"/>
+      <h5>Change Password</h5>
+      <form id="changePasswordForm">
+        <div class="mb-3">
+          <label>Current Password</label>
+          <input type="password" id="currentPassword" name="currentPassword" class="form-control" />
+          <div class="error-message" id="currentpass-error"></div>
+        </div>
+        <div class="mb-3">
+          <label>New Password</label>
+          <input type="password" id="newPassword" name="newPassword" class="form-control" />
+          <div class="error-message" id="newpass-error"></div>
+        </div>
+        <div class="mb-3">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" />
+          <div class="error-message" id="confirmpass-error"></div>
+        </div>
+        <button type="submit" class="btn btn-secondary">Update Password</button>
+      </form>
+          </div>
+    </div>
+</div>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Bootstrap Bundle JS (includes Popper) -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('profilePicForm').addEventListener('change', async function (e) {
+        e.preventDefault()
+
+        const input = document.getElementById('profileImageInput')
+        const profileImage = input.files[0]
+        if(!profileImage) return
+
+        const formData = new FormData()
+        formData.append('profileImage', profileImage)
+
+        try {
+            const response = await fetch('/update-profile-pic', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json()
+            if(response.ok){
+                 document.getElementById('profileImagePreview').src = `/images/${result.profileImage}? t=${Date.now()}`
+            }else{
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops',
+                    text: result.message || 'Something went wrong'
+                })
+            }
+        } catch (error) {
+            Swal.fire({
+                icon:'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+    })
+</script>
+<script>
+    document.getElementById('updateProfileForm').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        const name = document.getElementById('name')
+        const phone = document.getElementById('phone')
+        const genderInput = document.getElementsByName('gender')
+
+        const nameError = document.getElementById('name-error')
+        const phoneError = document.getElementById('phone-error')
+        const genderError = document.getElementById('gender-error')
+
+        nameError.textContent = ''
+        phoneError.textContent = ''
+        genderError.textContent = ''
+        name.classList.remove('is-invalid')
+        phone.classList.remove('is-invalid')
+
+        let isValid = true
+
+        if(!name.value.trim()){
+            nameError.textContent = 'Name is required!'
+            name.classList.add('is-invalid')
+            isValid = false
+        }
+
+        const phonePattern = /^[6-9]\d{9}$/
+        if(!phone.value.trim() || !phonePattern.test(phone.value.trim())){
+            phoneError.textContent = 'Enter a valid 10 digit phone number'
+            phone.classList.add('is-invalid')
+            isValid = false
+        }
+
+        let genderSelected = false
+        for(let input of genderInput){
+            if(input.checked){
+                genderSelected = true
+                break
+            }
+        }
+        if(!genderSelected){
+            genderError.textContent = 'Please select your gender'
+            isValid = false
+        }
+
+        if(!isValid){
+            return
+        }
+
+        let gender = ''
+        for(let input of genderInput){
+            if(input.checked){
+                gender = input.value
+                break
+            }
+        }
+
+        try {
+            const response = await fetch('/update-profile', {
+                method: 'POST',
+                headers: {
+                    'content-type' : 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name.value.trim(),
+                    phone: phone.value.trim(),
+                    gender
+                })
+            })
+
+            const result = await response.json()
+            if(response.ok && result.success){
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Profile Updated',
+                    text: 'Your profile updated successfully',
+                    timer: 1200,
+                    showConfirmButton: false
+                })
+                .then(()=>{
+                    window.location.href = '/userProfile'
+                })
+            }else{
+                Swal.fire({
+                    icon:'error',
+                    title: 'OOps!',
+                    text: result.message || 'Something went wrong',
+                    timer: 1200,
+                    showConfirmButton: false
+                })
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+    })
+</script>
+<script>
+    document.getElementById('changePasswordForm').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        const currentPassword = document.getElementById('currentPassword')
+        const newPassword = document.getElementById('newPassword')
+        const confirmPassword = document.getElementById('confirmPassword')
+
+        const currentPassError = document.getElementById('currentpass-error')
+        const newPassError = document.getElementById('newpass-error')
+        const confirmPassError = document.getElementById('confirmpass-error')
+
+        currentPassword.classList.remove('is-invalid')
+        newPassword.classList.remove('is-invalid')
+        confirmPassword.classList.remove('is-invalid')
+
+        currentPassError.textContent = ''
+        newPassError.textContent = ''
+        confirmPassError.textContent = ''
+
+        let isValid = true
+
+        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/
+
+        if(!currentPassword.value.trim()){
+            currentPassError.textContent = 'Please enter your current password!'
+            currentPassword.classList.add('is-invalid')
+            isValid = false
+        }
+
+        if(!newPassword.value.trim() || !passwordPattern.test(newPassword.value.trim())){
+            newPassError.textContent = 'Please enter valid password'
+            newPassword.classList.add('is-invalid')
+            isValid = false
+        }
+
+        if(!confirmPassword.value.trim() || confirmPassword.value.trim() !== newPassword.value.trim() ){
+            confirmPassError.textContent = 'New password and cofirm password must be same'
+            confirmPassword.classList.add('is-invalid')
+            isValid = false
+        }
+
+        if(!isValid){
+            return
+        }
+
+        try {
+            const response = await fetch('/change-password', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    currentPassword: currentPassword.value.trim(),
+                    newPassword : newPassword.value.trim(),
+                    confirmPassword: confirmPassword.value.trim()
+                })
+            })
+            
+            const result = await response.json()
+
+            if(response.ok && result.success){
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Password changed',
+                    timer: 1200,
+                    showConfirmButton: false
+                })
+                .then(()=>{
+                    window.location.href = '/userProfile'
+                })
+            }else{
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops',
+                    text:result.message || 'Something went wrong',
+                    timer: 1200,
+                    showConfirmButton: false
+                })
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+    })
+
+</script>
+<%- include("../../views/partials/user/footer") %>

@@ -1,0 +1,46 @@
+/* General Container */
+.container {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+}
+
+/* Profile Image Styling */
+.profile-image {
+  object-fit: cover;
+  border: 3px solid #dee2e6;
+  margin-bottom: 20px;
+}
+
+/* Form Section Spacing */
+form .form-label {
+  font-weight: 500;
+}
+
+form .btn {
+  margin-top: 10px;
+}
+
+/* Radio Buttons Alignment */
+.form-check-inline {
+  margin-right: 15px;
+}
+
+/* Divider */
+hr.my-4 {
+  border-top: 1px solid #ccc;
+}
+
+/* Headings */
+h4, h5 {
+  font-weight: 600;
+}
+
+/* Responsive Tweaks */
+@media (max-width: 768px) {
+  .profile-image {
+    width: 100px;
+    height: 100px;
+  }
+}

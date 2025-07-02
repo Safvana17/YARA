@@ -1,0 +1,244 @@
+<%- include("../../views/partials/user/navbar") %>
+<style>
+    .error-message {
+        color: red;
+    }
+</style>
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card p-4 shadow-sm">
+        <h4 class="mb-4 text-center">Edit Address</h4>
+
+        <form id="editAddressForm" data-id="<%= addressId %>">
+          <div class="mb-3">
+            <label class="form-label">Address Type</label>
+            <select name="addressType" id="addressType" class="form-select" >
+              <option value="">Select Address Type</option>
+              <option value="Home" <%= selectedAddress.addressType === 'Home' ? 'selected' : '' %> >Home</option>
+              <option value="Work" <%= selectedAddress.addressType === 'Work' ? 'selected' : '' %> >Work</option>
+              <option value="Other" <%= selectedAddress.addressType === 'Other' ? 'selected' : '' %> >Other</option>
+            </select>
+            <div class="error-message" id="addresstype-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input type="text" id="name" name="name" value="<%= selectedAddress.name %>" class="form-control" />
+            <div class="error-message" id="name-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">House No.</label>
+            <input type="text" id="houseNo" name="houseNo" class="form-control" value="<%= selectedAddress.houseNo %>" />
+            <div class="error-message" id="houseno-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">City</label>
+            <input type="text" id="city" name="city" class="form-control" value="<%= selectedAddress.city %>" />
+            <div class="error-message" id="city-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Landmark</label>
+            <input type="text" id="landmark" name="landMark" class="form-control" value="<%= selectedAddress.landMark %>" />
+            <div class="error-message" id="landmark-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">State</label>
+            <input type="text" id="state" name="state" class="form-control" value="<%= selectedAddress.state %>" />
+            <div class="error-message" id="state-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Pin Code</label>
+            <input type="number" id="pincode" name="pinCode" class="form-control" value="<%= selectedAddress.pinCode %>" />
+            <div class="error-message" id="pincode-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input type="tel" id="phone" name="phone" class="form-control" value="<%= selectedAddress.phone %>" />
+            <div class="error-message" id="phone-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Alternate Phone</label>
+            <input type="tel" id="altphone" name="altPhone" class="form-control" value="<%= selectedAddress.altPhone %>" />
+            <div class="error-message" id="altphone-error"></div>
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Save Address</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("../../views/partials/user/footer") %>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('editAddressForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const addressId = document.getElementById('editAddressForm').dataset.id
+   const addressType = document.getElementById('addressType')
+   const name = document.getElementById('name')
+   const houseNumber = document.getElementById('houseNo')
+   const city = document.getElementById('city')
+   const landMark= document.getElementById('landmark')
+   const state = document.getElementById('state')
+   const pinCode = document.getElementById('pincode')
+   const phone = document.getElementById('phone')
+   const altPhone = document.getElementById('altphone')
+
+
+   const errorE2 = document.getElementById('addresstype-error')
+   const errorE1 = document.getElementById('name-error')
+   const errorE3 = document.getElementById('houseno-error')
+   const errorE4 = document.getElementById('city-error')
+   const errorE5 = document.getElementById('landmark-error')
+   const errorE6 = document.getElementById('state-error')
+   const errorE7 = document.getElementById('pincode-error')
+   const errorE8 = document.getElementById('phone-error')
+   const errorE9 = document.getElementById('altphone-error')
+
+   addressType.classList.remove('is-invalid')
+   name.classList.remove('is-invalid')
+   houseNumber.classList.remove('is-invalid')
+   city.classList.remove('is-invalid')
+   landMark.classList.remove('is-invalid')
+   state.classList.remove('is-invalid')
+   pinCode.classList.remove('is-invalid')
+   phone.classList.remove('is-invalid')
+   altPhone.classList.remove('is-invalid')
+
+   errorE1.textContent = ''
+   errorE2.textContent = ''
+   errorE3.textContent = ''
+   errorE4.textContent = ''
+   errorE5.textContent = ''
+   errorE6.textContent = ''
+   errorE7.textContent = ''
+   errorE8.textContent = ''
+   errorE9.textContent = ''
+   
+
+   const namePattern = /^[A-Za-z\s]+$/;
+   const pincodePattern = /^\d{6}$/;
+   const phonePattern = /^\d{10}$/;
+
+   let isValid = true
+
+   if(!name.value.trim() || !namePattern.test(name.value.trim())){
+    errorE1.textContent = 'Please enter a valid name(Only alphabets)'
+    name.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!addressType.value.trim()){
+    errorE2.textContent = 'Please select address type!'
+    addressType.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!houseNumber.value.trim()){
+    errorE3.textContent = 'Please enter house number'
+    houseNumber.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!city.value.trim() || !namePattern.test(city.value.trim())){
+    errorE4.textContent = 'Please enter a valid city name(Only alphabets)'
+    city.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!state.value.trim() || !namePattern.test(state.value.trim())){
+    errorE5.textContent = 'Please enter a valid state(Only alphabets)'
+    state.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!landMark.value.trim() || !namePattern.test(landMark.value.trim())){
+    errorE6.textContent = 'Please enter a valid landmark(Only alphabets)'
+    landMark.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!pinCode.value.trim() || !pincodePattern.test(pinCode.value.trim())){
+    errorE7.textContent = 'Please enter a valid pincode(6 - digits)'
+    pinCode.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!phone.value.trim() || !phonePattern.test(phone.value.trim())){
+    errorE8.textContent = 'Please enter 10 digits mobile number'
+    phone.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!altPhone.value.trim() || !phonePattern.test(altPhone.value.trim())){
+    errorE9.textContent = 'Please enter 10 digits alternative phone number'
+    altPhone.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(phone.value.trim() === altPhone.value.trim()){
+    errorE9.textContent = 'Phone number and alternative phone number cannot be same!'
+    altPhone.classList.add('is-invalid')
+    isValid = false
+   }
+
+   if(!isValid) return 
+
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch(`/edit-address/${addressId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: 'Address updated successfully',
+            timer: 1200,
+            showConfirmButton: false
+        })
+        .then(()=>{
+             window.location.href = '/address';
+        })
+      } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oopss',
+            text: result.message || 'Failed to update address',
+            timer: 1200,
+            showConfirmButton: false
+        })
+      }
+    } catch (error) {
+      console.error('Add address error:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Internal server error'
+      })
+    }
+  });
+</script>

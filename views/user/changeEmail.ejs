@@ -1,0 +1,112 @@
+<%- include("../../views/partials/user/navbar") %>
+<style>
+    .error-message {
+        color: red;
+    }
+</style>
+
+<div class="container mt-5 mb-5 flex-grow-1">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm p-4">
+        <h4 class="mb-4 text-center">Verify Identity</h4>
+        <form id="verifyEmailForm">
+          <div class="mb-3">
+            <label class="form-label">Current Email</label>
+            <input type="email" name="currentEmail" class="form-control" id="email" placeholder="Enter your current email"/>
+            <div class="error-message" id="email-error"></div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" id="password" placeholder="Enter your password" />
+            <div class="error-message" id="password-error"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">Continue</button>
+        </form>
+        <div class="mt-3 text-center">
+          <a href="/userProfile" class="text-muted">← Back to Profile</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('verifyEmailForm').addEventListener('submit', async function (e) {
+       e.preventDefault() 
+         const email = document.getElementById('email')
+         const password = document.getElementById('password')
+         const emailError = document.getElementById('email-error')
+         const passwordError = document.getElementById('password-error')
+
+         const emailPattern =  /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/
+         let isValid = true
+
+         email.classList.remove('is-invalid')
+         password.classList.remove('is-invalid')
+         emailError.textContent = ''
+         passwordError.textContent = ''
+
+         if(!email.value.trim() || !emailPattern.test(email.value.trim())){
+            emailError.textContent = 'Please enter a valid email'
+            email.classList.add('is-invalid')
+            isValid = false
+         }
+         if(!password.value.trim()){
+            passwordError.textContent = 'Please enter your password'
+            password.classList.add('is-invalid')
+            isValid = false
+         }
+
+         if(!isValid) return
+
+
+    try {
+        const response = await fetch('/change-email',{
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email.value.trim(),
+                password: password.value.trim()
+            })
+        })
+
+        const result = await response.json()
+
+        if(response.ok && result.success){
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: 'OTP for email change send.',
+                timer: 1200,
+                showConfirmButton: false
+            })
+            .then(()=>{
+                window.location.href = '/verify-email-change-otp'
+            })
+        }else{
+            Swal.fire({
+                icon:'Error',
+                title: 'Oopss',
+                text: result.message || 'Something went wrong',
+                timer: 1200,
+                showConfirmButton: false
+            })
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title:'Error',
+            text: error.message
+        })
+    }
+ })
+</script>
+<%- include("../../views/partials/user/footer") %>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up OTP</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/sweetalert2.min.css">
+    <link rel="stylesheet" href="/css/otpverify.css">
+</head>
+<body>
+    <div class="container">
+        <div class="otp-box">
+            <img class="lock-icon" src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt="Lock Icon">
+            <h1>Enter your OTP</h1>
+            <form action="/verify-otp-changeEmail" method="post" onsubmit="return gatherOTP()">
+                <div class="otp-input">
+                     <input type="text" name="otp" id="otp" maxlength="6"><br>
+                     <button type="submit">Verify</button>
+                </div>
+            </form>
+       
+            <div class="resendOTP">
+                <p class="timer" id="timer" >Resend OTP after 60s</p>
+                <button type="submit" id="resendBtn" style="display: none;" onclick="resendOTP()">Resend OTP</button>
+            </div>
+            <div class="loginLink">
+                Already have an account? <a href="/login">Login</a>
+            </div>
+       </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    
+        let otpInput = document.getElementById('otp')
+        let timer = document.getElementById('timer')
+        let resendLink = document.getElementById('resendBtn')
+        // startTimer()
+        let interval
+        let seconds = 60
+        function gatherOTP(){
+             $.ajax({
+                type:'POST',
+                url:'verify-otp-changeEmail',
+                data:{otp: otpInput.value},
+                success: function(response){
+                    if(response.success){
+                        Swal.fire({
+                            icon: "success",
+                            title: "OTP Verified successfully",
+                            showConfirmButton: false,
+                            timer: 1500
+                        })
+                        .then(()=>{
+                            window.location.href = response.redirectUrl
+                        })
+                    }else{
+                        Swal.fire({
+                            icon:"error",
+                            title:'Error',
+                            text: response.message
+                        })
+                    }
+                },
+                error: function(){
+                    Swal.fire({
+                        icon:"error",
+                        title:"Invalid OTP",
+                        text: "Please try again"
+                    })
+                }
+             })
+             return false
+        }
+
+        function resendOTP(){
+            clearInterval(interval)
+            seconds = 60
+
+            resendLink.disabled = true,
+            resendLink.style.opacity = 0.5
+
+            $.ajax({
+                type: 'POST',
+                url:"/changeEmailResendOtp",
+                success: function(response){
+                    if(response.success){
+                        Swal.fire({
+                            icone:"success",
+                            title: "OTP Resend successfully",
+                            showConfirmButton: false,
+                            timer: 1550
+                        })
+                        otpInput.value = ""
+                        otpInput.disabled = false
+
+                        resendLink.disabled = false
+                        resendLink.style.opacity = "1"
+
+                        startTimer()
+                    }else{
+                        Swal.fire({
+                            icon:"error",
+                            title:"Error",
+                            text: "Error oocured while Resending OTP, please try later"
+                        })
+                    }
+                },
+                error: function(){
+                    Swal.fire({
+                        icon:"error",
+                        title:"Error",
+                        text: "Internal Serover Error"
+                    })
+                    resendLink.disabled = false,
+                    resendLink.style.opacity = "1"
+                }
+            })
+            return false
+        }
+
+        function startTimer(){
+            clearInterval(interval)
+            seconds = 60
+            timer.style.display = 'inline'
+            resendLink.style.display = 'none'
+            interval = setInterval(()=>{
+                seconds--
+                timer.textContent = `Resend OTP after ${seconds}s`
+
+                if(seconds <= 0){
+                    clearInterval(interval)
+                    timer.style.display = 'none'
+                    resendLink.style.display = 'inline'
+                }
+            }, 1000)
+        }
+        window.onload = startTimer
+    </script>
+</body>
+</html>

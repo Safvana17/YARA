@@ -57,6 +57,10 @@ const userSchema = new Schema({
     ref: "User",
     default: null
   },
+  profileImage: {
+    type: [String],
+    required: false
+  },
   isBlocked: {
     type: Boolean,
     default: false
