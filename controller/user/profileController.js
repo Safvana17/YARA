@@ -343,9 +343,9 @@ const changePassword = async (req, res) => {
 const getAddressPage = async (req, res) => {
     try {
         const userId = req.session.user
-        // const userData = await User.findOne({userId})
+        const user = await User.findById(userId)
         const addressData = await Address.findOne({userId})
-        res.render('user-address',{addressData})
+        res.render('user-address',{user,addressData})
     } catch (error) {
         console.error('Error while loading error page', error)
         res.redirect('/pageNotFound')

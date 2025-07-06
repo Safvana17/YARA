@@ -398,9 +398,9 @@
             <span class="text-muted"><s>₹<%= products[i].regularPrice %></s></span>
           </p>
         </a>
-        <div class="mt-auto">
-              <button class="add-to-cart-btn mb-2">Add to Cart</button>
-        </div>
+        <!-- <div class="mt-auto">
+              <button class="add-to-cart-btn mb-2 add-to-cart" data-product-id="<%= products[i]._id %>" id="cartButton">Add to Wishlist</button>
+        </div> -->
 
       </div>
     <% } %>
@@ -460,7 +460,7 @@
         <!-- Clear Filters Section -->
       <div class="filter-section mt-4">
         <div class="d-grid gap-2">
-          <a href="/shop" class="btn btn-outline-secondary btn-block" >Clear Filters</a>
+          <a href="/shop" class="btn btn-outline-secondary btn-block add-to=cart" >Clear Filters</a>
         </div>
       </div>
      </aside>
@@ -507,7 +507,48 @@
     backdrop.classList.remove("active");
   });
 </script>
+<script>
+  document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', async function () {
+      const productId = this.getAttribute('data-product-id')
 
+      try {
+        const response = await fetch('/addToCart', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({productId})
+        })
+
+        const result = await response.json()
+        if(result.status){
+          Swal.fire({
+            icon: 'success',
+            title: 'Added to Cart',
+            text: result.message,
+            timer: 1200,
+            showConfirmButton: false
+          })
+        }else {
+          Swal.fire ({
+            icon: 'warning',
+            title: 'Oops',
+            text: result.message
+          })
+        }
+      } catch (error) {
+        console.error('Error while product add to cart', error)
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Something went wrong'
+        })
+      }
+    })
+  })
+       
+</script>
 
 
 <%- include("../../views/partials/user/footer") %>

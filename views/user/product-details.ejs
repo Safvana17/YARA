@@ -114,7 +114,7 @@
         <div>
           <p><strong>Select Size:</strong></p>
           <% variants.forEach(variant => { %>
-            <button class="size-btn" data-size="<%= variant.size %>" data-price="<%= variant.salePrice %>">
+            <button class="size-btn" data-size="<%= variant.size %>" data-price="<%= variant.salePrice %>" data-variant-id="<%= variant._id %>">
               <%= variant.size %>
             </button>
           <% }) %>
@@ -122,8 +122,8 @@
 
         <div class="product-extra-link2">
           <input type="hidden" id="selectedSize" />
-          <button class="btn btn-success m-3">Add to Cart</button>
-          <a class="btn btn-info text-decoration-none" href="#" style="margin-left:10px;"> Wishlist</a>
+          <button class="btn btn-success m-3 add-to-cart" data-product-id="<%= product._id %>" id="cartButton">Add to Cart</button>
+          <button class="btn btn-primary m-3 wishlist" data-item-id="<%= product._id %>" id="wishlistButton" >Wishlist</button>
         </div>
 
         <!-- Policies -->
@@ -175,6 +175,113 @@
     document.getElementById('mainPreview').src = src;
   }
 
+</script>
+
+<script>
+
+  let selectedVariantId = null
+
+  //select size
+  document.querySelectorAll('.size-btn').forEach(button =>{
+    button.addEventListener('click', function(){
+      document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('selected'))
+
+      this.classList.add('selected')
+      selectedVariantId = this.getAttribute('data-variant-id')
+    })
+  })
+
+  //add to cart
+  document.querySelector('.btn-success').addEventListener('click', async function () {
+    if(!selectedVariantId){
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Please select a size before adding to cart'
+      })
+    }
+
+    const productId = this.getAttribute('data-product-id')
+
+      try {
+        const response = await fetch('/addToCart', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({productId, variantId: selectedVariantId})
+        })
+
+        const result = await response.json()
+        if(result.success){
+          Swal.fire({
+            icon: 'success',
+            title: 'Added to Cart',
+            text: result.message,
+            timer: 1200,
+            showConfirmButton: false
+          })
+        }else {
+          Swal.fire ({
+            icon: 'warning',
+            title: 'Oops',
+            text: result.message
+          })
+        }
+      } catch (error) {
+        console.error('Error while product add to cart', error)
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Something went wrong'
+        })
+      }
+    })     
+</script>
+<script>
+
+  document.getElementById('wishlistButton').addEventListener('click', async function (e) {
+    
+  const productId = this.getAttribute('data-item-id')
+
+  try {
+    const response = await fetch('/add-wishlist', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({productId})
+    })
+
+    const result = await response.json()
+    if(response.ok){
+      Swal.fire({
+        icon: 'success',
+        title: 'Added!',
+        text: 'Product added to wishlist',
+        timer: 1200,
+        showConfirmButton: false
+      })
+      .then(()=>{
+        location.reload()
+      })
+    }else{
+      Swal.fire({
+        icon: "warning",
+        title: 'Oops!',
+        text: result.message || 'Something went wrong',
+        timer: 1200,
+        showConfirmButton: false
+      })
+    }
+  } catch (error) {
+    console.log('Error while adding item to the wishlist', error)
+    Swal.fire({
+      icon: 'error',
+      title: 'Failed',
+      text: error.message || 'Internal server error'
+    })
+  }
+ })
 </script>
 
 <%- include("../../views/partials/user/footer") %>

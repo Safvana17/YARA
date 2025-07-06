@@ -214,7 +214,7 @@ const editProduct = async (req, res) => {
         const productId = req.params.id
         const {name, description, categoryId, brand, regularPrice, salePrice, color} = req.body
         const existingProduct = await Product.findOne({
-            name: {name: {$regex: new RegExp(`^${name}$`, 'i')}},
+            name:{$regex: new RegExp(`^${name}$`, 'i')},
             _id: {$ne: productId}
         })
 

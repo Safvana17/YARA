@@ -3,6 +3,10 @@ const router = express.Router()
 const userController = require('../controller/user/userController')
 const profileController = require('../controller/user/profileController')
 const productController = require('../controller/user/productController')
+const cartController = require('../controller/user/cartController')
+const checkoutController = require('../controller/user/checkoutController')
+const orderController = require('../controller/user/orderController')
+const wishlistController = require('../controller/user/wishlistController')
 const passport = require('passport')
 const {userAuth, adminAuth } = require('../middleware/auth')
 
@@ -26,6 +30,7 @@ router.get('/auth/google/callback', passport.authenticate('google',{failureRedir
 router.get('/', userController.loadHome)
 router.get('/shop', userAuth, userController.loadShoppingPage)
 router.get('/search', userAuth, userController.searchProducts)
+
 //profile management
 router.get('/userProfile', userAuth, profileController.loadUserProfile)
 router.get('/forgotpassword', profileController.getForgotPassword)
@@ -52,13 +57,33 @@ router.post('/add-address', userAuth, profileController.addAddress)
 router.get('/edit-address/:id', userAuth, profileController.getEditAddress)
 router.post('/edit-address/:id', userAuth, profileController.editAddress)
 router.delete('/delete-address/:id', userAuth, profileController.deleteAddress)
+
 //product management
 router.get('/productDetails', userAuth, productController.productDetails)
 
+//cart management
+router.get('/cart', userAuth, cartController.getCartPage)
+router.post('/addToCart', userAuth, cartController.addToCart)
+router.delete('/removeItem/:id', userAuth, cartController.removeFromCart)
+router.patch('/updateQuantity/:id', userAuth, cartController.updateQuantity)
 
+//checkout management
+router.get('/checkout', userAuth, checkoutController.loadCheckout)
+router.delete('/removeItem/:id', userAuth, checkoutController.removeItem)
 
+//order management
+router.post('/placeOrder', userAuth, orderController.placeOrder)
+router.get('/orderDetails/:id', userAuth, orderController.orderDetails)
+router.get('/orders', userAuth, orderController.getAllOrders)
+router.get('/download-invoice/:id', userAuth, orderController.getInvoice)
+router.put('/return-order/:id', userAuth, orderController.returnOrder)
+router.put('/cancel-order/:id', userAuth, orderController.cancelOrder)
 
-
+//wishlist management
+router.get('/wishlist', userAuth, wishlistController.loadWishlist)
+router.post('/add-wishlist', userAuth, wishlistController.addToWishlist)
+router.delete('/wishlist/remove/:id', userAuth, wishlistController.removeFromWishlist)
+router.post('/wishlistAddToCart', userAuth, wishlistController.addToCartFromWishlist)
 
 
 module.exports = router

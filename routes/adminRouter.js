@@ -4,6 +4,7 @@ const customerController = require('../controller/admin/customerController')
 const categoryController = require('../controller/admin/categoryController')
 const brandController = require('../controller/admin/brandController')
 const productController = require('../controller/admin/productController')
+const orderController = require('../controller/admin/orderController')
 const {adminAuth, userAuth} = require('../middleware/auth')
 const upload = require('../middleware/multerConfig')
 const router = express.Router()
@@ -58,6 +59,15 @@ router.post('/add-product', adminAuth,upload.fields([
         {name: 'image5', maxCount: 1}
     ]) ,productController.editProduct)
  router.post('/deleteImage', adminAuth, productController.deleteSingleImage)
+
+//order managemnet
+router.get('/orders', adminAuth, orderController.getOrders)
+router.get('/order-details/:id', adminAuth, orderController.viewOrderDetails)
+router.post('/update-order-status/:id', adminAuth, orderController.updateOrderStatus)
+router.get('/download-invoice/:id', adminAuth, orderController.getInvoice)
+router.post('/approve-return/:id', adminAuth, orderController.approveReturnRequest)
+router.post('/cancel-return/:id', adminAuth, orderController.cancelReturnRequest)
+
 
 
 module.exports = router

@@ -1,0 +1,238 @@
+<%- include("../../views/partials/user/navbar") %>
+
+<div class="container my-5">
+  <h3 class="mb-4 text-center">Checkout</h3>
+  <form action="/placeOrder" method="POST" id="placeOrderForm">
+
+   <!-- Product Details Table -->
+<div class="card shadow-sm p-4 mb-4">
+  <h5 class="mb-3">Your Items</h5>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Image</th>
+          <th scope="col">Product</th>
+          <th scope="col" class="text-end">Qty</th>
+          <th scope="col" class="text-end">Regular Price</th>
+          <th scope="col" class="text-end">Sale Price</th>
+          <th scope="col" class="text-end">Item Total</th>
+          <th scope="col" class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% cartItems.forEach(item => { %>
+          <tr>
+            <td style="width: 120px;">
+              <img src="<%= item.productId.productImage[0] %>" alt="<%= item.productId.name %>" width="100" height="100" class="rounded shadow-sm">
+            </td>
+            <td>
+              <strong><%= item.productId.name %></strong><br>
+              <small>Brand: <%= item.productId.brandName %></small><br>
+              <small>Color: <%= item.productId.color %></small><br>
+              <small>Size: <%= item.variantId.size %></small>
+            </td>
+            <td class="text-end">
+              <%= item.quantity %>
+            </td>
+            <td class="text-end">
+              ₹<%= item.productId.regularPrice %>
+            </td>
+            <td class="text-end">
+              ₹<%= item.productId.salePrice %>
+            </td>
+            <td class="text-end">
+              ₹<%= item.totalPrice.toFixed(2) %>
+            </td>
+            <td class="text-end">
+              <!-- <a href="/removeItem/<%= item._id %>" class="btn btn-sm btn-outline-danger">Remove</a> -->
+              <button type="button" onclick="removeItem('<%= item._id %>')" class="btn btn-sm btn-outline-danger">Delete</button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+
+    <div class="row">
+      <!-- Address Section -->
+      <div class="col-md-7">
+        <div class="card shadow-sm p-4 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Shipping Address</h5>
+            <a href="/add-address" class="btn btn-sm btn-outline-success">+ Add New Address</a>
+          </div>
+
+          <% if (addresses.length > 0) { %>
+            <% addresses.forEach(address => { %>
+              <div class="form-check border rounded p-3 mb-2">
+                <input 
+                  class="form-check-input" 
+                  type="radio" 
+                  name="selectedAddress" 
+                  value="<%= address._id %>" 
+                  id="address-<%= address._id %>" 
+                  <%= address._id.toString() === selectedAddress.toString() ? 'checked' : '' %>
+                >
+                <label class="form-check-label ms-2" for="address-<%= address._id %>">
+                  <strong><%= address.name %></strong> | <%= address.addressType %><br>
+                  <%= address.houseNo %>, <%= address.city %>, <%= address.state %><br>
+                  PIN: <%= address.pinCode %> | Phone: <%= address.phone %>
+                </label>
+                <div class="m-3 text-end">
+                    <a href="/edit-address/<%= address._id %>" class="btn btn-sm btn-outline-danger"> Edit ADDRESS</a>
+                </div>
+              </div>
+              
+            <% }) %>
+          <% } else { %>
+            <p>No address found.></p>
+          <% } %>
+        </div>
+
+        <!-- Payment -->
+        <div class="card shadow-sm p-4">
+          <h5 class="mb-3">Payment Method</h5>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="payment" id="cod" value="cod" checked>
+            <label class="form-check-label" for="cod">Cash on Delivery (COD)</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div class="col-md-5">
+        <div class="card shadow-sm p-4">
+          <h5 class="mb-3">Order Summary</h5>
+
+          <div class="d-flex justify-content-between">
+            <span>Subtotal</span>
+            <span>₹<%= totalAmount.toFixed(2) %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Shipping</span>
+            <span>₹<%= shippingCharge %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Discount</span>
+            <span class="text-success">- ₹<%= discount %></span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Tax ( 5% )</span>
+            <span>₹<%= tax %></span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span>₹<%= finalAmount.toFixed(2) %></span>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 mt-4">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<%- include("../../views/partials/user/footer") %>
+  <!-- Bootstrap Bundle JS (includes Popper) -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+   async function removeItem(itemId){
+    const confirmuser = confirm('Are you sure want to remove this item from the cart?')
+    if(!confirmuser){
+        return
+    }
+
+    try {
+        const response = await fetch(`/removeItem/${itemId}`, {
+            method: 'DELETE',
+        })
+
+        const result = await response.json()
+        if(response.ok && result.success){
+            Swal.fire({
+                icon: 'success',
+                title: 'Item removed',
+                text:'Item is removed from the cart',
+                timer: 1200,
+                showConfirmButton: false
+            })
+            .then(()=>{
+                location.reload()
+            })
+        }else{
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops!',
+                text: result.message || 'Something went wrong',
+                timer: 1200,
+                showConfirmButton: false
+            })
+        }
+    } catch (error) {
+        console.error('Error while removing item ', error)
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Internal server error'
+        })
+    }
+  }
+</script>
+<script>
+    document.getElementById('placeOrderForm').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        try {
+            const form = e.target
+            const formData = new FormData(form)
+            const plainFormData = Object.fromEntries(formData.entries())
+
+            const response = await fetch('/placeOrder', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify(plainFormData)
+            })
+            const result = await  response.json()
+            if(response.ok && result.success){
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Order Placed!',
+                    text: 'Your order has been placed successfully',
+                    showConfirmButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: 'View Details',
+                    cancelButtonText: 'Continue Shopping'
+                })
+                .then((res) =>{
+                    if(res.isConfirmed){
+                        window.location.href = `/orderDetails/${result.orderId}`
+                    }else{
+                        window.location.href = '/shop'
+                    }
+                })
+            }else{
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Failed to place order',
+                    text: result.message || 'Something went wrong, Please try again'
+                })
+            }
+        } catch (error) {
+            console.error('Order placement failed', error)
+            Swal.fire({
+                icon: 'error',
+                title: 'Internal server error',
+                text: error.message || 'Unexpected issue occured'
+            })
+        }
+    })
+</script>

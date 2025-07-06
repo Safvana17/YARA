@@ -7,6 +7,7 @@ const path = require('path')
 const session = require('express-session')
 const db = require('./config/db')
 const passport = require('./config/passport')
+const MongoStore = require('connect-mongo')
 const app = express()
 
 db()
@@ -17,6 +18,7 @@ app.use(session({
     secret:  process.env.SECRET_KEY,
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({mongoUrl: process.env.MONGODB_URI}),
     cookie: ({
         secure: false,
         httpOnly : true,
@@ -33,6 +35,7 @@ app.use((req,res,next)=>{
 app.set('view engine', 'ejs')
 app.set('views',[path.join(__dirname,'views/user'), path.join(__dirname,'views/admin')])
 app.use(express.static(path.join(__dirname, 'public')))
+app.use('/images', express.static('public/images'))
 
 app.use('/admin', adminRouter)
 app.use('/', userRouter)
