@@ -28,6 +28,8 @@ router.get('/category/:id/list', adminAuth, categoryController.listCategory)
 router.get('/category/:id/unlist', adminAuth, categoryController.unlistCategory)
 router.get('/category/edit/:id', adminAuth, categoryController.getEditCategory)
 router.post('/category/edit/:id', adminAuth, categoryController.editCategory)
+router.post('/category/add-category-offer/:id', adminAuth, categoryController.addOffer)
+router.delete('/category/remove-category-offer/:id', adminAuth, categoryController.removeOffer)
 
 //brand management
 router.get('/brands', adminAuth, brandController.loadBrands)
@@ -59,6 +61,8 @@ router.post('/add-product', adminAuth,upload.fields([
         {name: 'image5', maxCount: 1}
     ]) ,productController.editProduct)
  router.post('/deleteImage', adminAuth, productController.deleteSingleImage)
+ router.post('/product/add-product-offer/:id', adminAuth, productController.addOffer)
+router.delete('/product/remove-product-offer/:id', adminAuth, productController.removeOffer)
 
 //order managemnet
 router.get('/orders', adminAuth, orderController.getOrders)
@@ -67,6 +71,9 @@ router.post('/update-order-status/:id', adminAuth, orderController.updateOrderSt
 router.get('/download-invoice/:id', adminAuth, orderController.getInvoice)
 router.post('/approve-return/:id', adminAuth, orderController.approveReturnRequest)
 router.post('/cancel-return/:id', adminAuth, orderController.cancelReturnRequest)
+
+//refer and earn
+router.get('/referrals', adminAuth, adminController.loadReferralPage)
 
 
 

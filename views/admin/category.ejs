@@ -42,6 +42,7 @@
                 <th>Category Name</th>
                 <th>Description</th>
                 <th>Staus</th>
+                <th>Offer</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -58,10 +59,18 @@
                         <%= cat.isListed ? 'Listed' : 'Unlisted' %>
                     </span></td>
                     <td>
+                        <%= cat.categoryOffer ? cat.categoryOffer : 0 %>%
+                    </td>
+                    <td>
                         <a href="/admin/category/edit/<%= cat._id %>" class="btn btn-info">Edit</a>
                         <a href="/admin/category/<%=cat._id %>/<%= cat.isListed ? 'unlist' : 'list'%>" class="btn btn-<%= cat.isListed ? 'danger' : 'success' %>">
                             <%= cat.isListed ? 'Unlist': 'List' %>
                         </a>
+                        <% if(cat.categoryOffer > 0) { %>
+                            <a href="#" class="btn btn-warning" onclick="removeOffer('<%= cat._id %>')" >Remove Offer</a>
+                        <% } else { %>
+                            <a href="#" class="btn btn-success" onclick="addOffer('<%= cat._id %>')" >Add Offer</a>
+                        <% } %>
                     </td>
                 </tr>
                 <% }) %>
@@ -81,7 +90,29 @@
     <% } %>
 </div>
 
-
+<!-- add offer modal-->
+ <div class="modal fade" id="offerModal" tabindex="-1" aria-labelledby="offerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="offerForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="offerModalLabel"> Add Offer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="entityId" id="entityId">
+          <div class="mb-3">
+            <label for="offerValue" class="form-label">Offer Percentage (%)</label>
+            <input type="number" id="offerValue" name="offerValue" min="1" max="90" class="form-control" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Apply Offer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+ </div>
 
 
 
@@ -161,5 +192,102 @@
             element.innerText = ''
             element.style.display = 'none'
         })
+    }
+</script>
+<script>
+    let selectedCategoryId = null
+ function addOffer(categoryId){
+    selectedCategoryId = categoryId
+    document.getElementById('entityId').value = categoryId
+    document.getElementById('offerValue').value = ''
+
+    const modal = new bootstrap.Modal(document.getElementById('offerModal'))
+    modal.show()
+ }
+
+    document.getElementById('offerForm').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        const category = document.getElementById('entityId').value
+        const offerValue = document.getElementById('offerValue').value 
+        try {
+            const response = await fetch(`/admin/category/add-category-offer/${selectedCategoryId}`,{
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({offerValue})
+
+            })
+
+            const result = await response.json()
+            if(response.ok) {
+               const modalElement = document.getElementById('offerModal')
+               const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement)
+               modalInstance.hide()
+
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Offer Added',
+                    text: `Offer added successfully.`
+                })
+                .then(()=>{
+                    location.reload()
+                })
+            }else{
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.message || 'Error while adding offer'
+                })
+            }
+        } catch (error) {
+            console.error('Error while adding offer', error)
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+    })
+
+</script>
+<script>
+    async function removeOffer(categoryId){
+        try {
+          const confirmRemove = confirm('Are you sure wants to remove offer?')
+          if(!confirmRemove) return
+
+          const response = await fetch(`/admin/category/remove-category-offer/${categoryId}`, {
+                 method: 'DELETE'
+          })
+
+          const result = await response.json()
+          if(response.ok){
+            Swal.fire({
+                icon: 'success',
+                title: 'Offer Removed!',
+                text: 'Product offer removed successfully'
+            })
+            .then(()=>{
+                location.reload()
+            })
+          }else{
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops',
+                text: result.message || 'Something went wrong'
+            })
+          }
+        } catch (error) {
+            console.error('Error while removing offer', error)
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+
     }
 </script>

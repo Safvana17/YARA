@@ -8,6 +8,7 @@
  
   <div class="card shadow-sm p-4">
     <h5>Order ID: <%= order._id %></h5>
+    <p><strong>Payment Method: </strong><%= order.payment %></p>
     <p><strong>Date:</strong> <%= order.createdAt.toDateString() %></p>
     <p><strong>Status:</strong> <%= order.status %></p>
 
@@ -61,7 +62,7 @@
 <div class="d-flex justify-content-end mt-3 gap-3">
   <a href="/download-invoice/<%= order._id %>" class="btn btn-outline-primary">Download Invoice</a>
 
-  <% if(order.status !== 'Delivered') { %>
+  <% if(order.status !== 'Delivered' && order.status !== 'Cancelled' && order.status !== 'Return Request' ) { %>
     <!-- Cancel Button -->
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">Cancel Order</button>
 

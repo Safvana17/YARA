@@ -4,10 +4,56 @@ const Product =require('../../models/productSchema')
 const Address = require('../../models/addressSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Order = require('../../models/orderSchema')
+const razorpayInstance = require('../../utils/razorpayInstance')
 const puppeteer = require('puppeteer')
 const path = require('path')
 const ejs = require('ejs')
 const fs = require('fs')
+const Razorpay = require('razorpay')
+const crypto = require('crypto')
+
+//create razorpay order
+const createRazorpayOrder = async (req, res) => {
+    try {
+        const { amount } = req.body
+        const options = {
+            amount: amount * 100,
+            currency: 'INR',
+            receipt:`receipt_order_${Date.now()}`
+        }
+
+        const order = await razorpayInstance.orders.create(options)
+        res.json(order)
+    } catch (error) {
+        console.error("Razorpay order error", error)
+        res.status(500).json({success: false, message: 'Razorpay order creation failed'})
+    }
+}
+
+//verify payment
+const verifyPayment = async (req, res) => {
+    try {
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature
+        } = req.body
+
+        const generateSignature = crypto
+              .createHmac('sha256', process.env.Razorpay_KEY_SECRET)
+              .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+              .digest('hex')
+
+        if(generateSignature === razorpay_signature){
+            res.status(200).json({success: true})
+        }else{
+            res.status(400).json({ success: false, message: 'Payment verification failed'})
+        }
+    } catch (error) {
+        console.error('Payment verification error', error)
+        res.status(500).json({ success: false, message: 'internal server error'})
+    }
+}
 
 //place order
 const placeOrder = async (req, res) => {
@@ -15,12 +61,16 @@ const placeOrder = async (req, res) => {
         const userId = req.session.user 
         const {selectedAddress, payment} = req.body
 
+        console.log('REQ.BODY:', req.body)
+
+
         //get address data
         const addressDoc = await Address.findOne({userId})
         const address = addressDoc?.address.id(selectedAddress)
         if(!address){
             return res.status(404).json({success: false, message :'Address is not selected!'})
         }
+
 
         //get cart data
         const cartDoc = await Cart.findOne({userId}).populate('items.productId items.variantId')
@@ -30,8 +80,8 @@ const placeOrder = async (req, res) => {
             return res.status(400).json({success: false, message: 'No items in the cart'})
         }
 
-        console.log("Selected Address:", selectedAddress)
-console.log("AddressDoc:", addressDoc?.address)
+        //console.log("Selected Address:", selectedAddress)
+        //console.log("AddressDoc:", addressDoc?.address)
 
         //validate and prepare order
         const orderItems = []
@@ -41,6 +91,7 @@ console.log("AddressDoc:", addressDoc?.address)
             if(item.quantity > item.variantId.stockQuantity){
                 return res.status(400).json({success: false, message :'Insuffiecient stock for some items'})
             }
+
             orderItems.push({
                 product: item.productId._id,
                 variant : item.variantId._id,
@@ -50,10 +101,46 @@ console.log("AddressDoc:", addressDoc?.address)
             })
             subTotal += item.totalPrice
         }
+
         const shippingCharge = subTotal > 1000 ? 0 : 40
         const discount= 0
         const tax = Math.round(subTotal * 0.5)
         const totalAmount = shippingCharge + subTotal + tax - discount
+
+        //handle wallet deduction
+        if(payment === 'wallet'){
+              console.log('✅ Entered wallet payment block')
+            try{
+            const user = await User.findById(userId)
+            if(user.wallet < totalAmount) {
+                  console.log('✅ Entered wallet payment block1')
+                return res.status(400).json({success: false, message: 'Insufficient wallet amount'})
+            }
+
+              console.log('✅ Entered wallet payment block2')
+            user.wallet -= totalAmount
+
+            //save wallet transaction
+         user.walletTransaction.push({
+                
+                date: Date.now(),
+                amount: totalAmount,
+                status: 'debited'
+            })
+
+             await user.save()
+
+             console.log('Wallet before deduction:', user.wallet + totalAmount)
+             console.log('Wallet after deduction:', user.wallet)
+             console.log('Saving wallet transaction...')
+
+        }catch(error){
+           console.error('Error in wallet selection', error)
+           return res.status(500).json({success: false, message: ' wallet processing error'})
+        }
+    }
+    
+
 
         //create order
         const newOrder = new Order({
@@ -73,7 +160,7 @@ console.log("AddressDoc:", addressDoc?.address)
 
         //decrease stock
         for(let item of orderItems){
-            await ProductVariant.findByIdAndUpdate(item.variantId,{
+            await ProductVariant.findByIdAndUpdate(item.variant,{
                 $inc : {stockQuantity: -item.quantity}
             })
         }
@@ -90,6 +177,23 @@ console.log("AddressDoc:", addressDoc?.address)
 
 }
 
+
+//order success page
+const loadOrderSuccessPage = async (req, res) => {
+    try {
+        const userId = req.session.user 
+        const orderId = req.params.id 
+        const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
+        if(!order){
+            return res.status(404).json({ success: false, message: 'Order not found'})
+        }
+
+        res.render('order-success', { order })
+    } catch (error) {
+        console.error('Error while loading order success page', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
 //order details
 const orderDetails = async (req, res) => {
     try {
@@ -219,6 +323,7 @@ const returnOrder = async (req, res) => {
         const {reason } = req.body
         const orderId = req.params.id
         const order = await Order.findOne({_id: orderId, userId})
+        const user = await User.findById(userId)
 
         if(!order){
             return res.status(404).json({success: false, message: 'Order not found!'})
@@ -275,6 +380,21 @@ const cancelOrder = async (req, res) => {
         order.cancelReason = reason
         await order.save()
 
+        if(order.payment === 'razorpay' || order.payment === 'wallet'){
+            const refundAmount = order.finalAmount
+            user.wallet += refundAmount
+
+            user.walletTransaction.push({
+                amount: refundAmount,
+                status: 'credited',
+                method: 'refund',
+                description: `Refund for ${order.status.toLowerCase()} order ${order.orderId}.`
+            })
+
+            await user.save()
+        }
+
+
         res.status(200).json({success: true, message: 'Order cancelled!'})
     } catch (error) {
         console.error('Error while cancelling order', error)
@@ -287,5 +407,8 @@ module.exports = {
     getAllOrders,
     getInvoice,
     returnOrder,
-    cancelOrder
+    cancelOrder,
+    createRazorpayOrder,
+    verifyPayment,
+    loadOrderSuccessPage
 }

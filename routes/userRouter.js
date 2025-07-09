@@ -7,6 +7,7 @@ const cartController = require('../controller/user/cartController')
 const checkoutController = require('../controller/user/checkoutController')
 const orderController = require('../controller/user/orderController')
 const wishlistController = require('../controller/user/wishlistController')
+const walletController = require('../controller/user/walletController')
 const passport = require('passport')
 const {userAuth, adminAuth } = require('../middleware/auth')
 
@@ -49,6 +50,7 @@ router.post('/updateEmail', userAuth, profileController.updateEmail)
 router.post('/update-profile', userAuth, profileController.updateProfile)
 router.post('/update-profile-pic', userAuth, profileController.updateProfilePic)
 router.post('/change-password', userAuth, profileController.changePassword)
+router.get('/referAndEarn', userAuth, profileController.loadReferAndEarn)
 
 //address management
 router.get('/address', userAuth, profileController.getAddressPage)
@@ -72,18 +74,27 @@ router.get('/checkout', userAuth, checkoutController.loadCheckout)
 router.delete('/removeItem/:id', userAuth, checkoutController.removeItem)
 
 //order management
-router.post('/placeOrder', userAuth, orderController.placeOrder)
+router.post('/place-order', userAuth, orderController.placeOrder)
 router.get('/orderDetails/:id', userAuth, orderController.orderDetails)
 router.get('/orders', userAuth, orderController.getAllOrders)
 router.get('/download-invoice/:id', userAuth, orderController.getInvoice)
 router.put('/return-order/:id', userAuth, orderController.returnOrder)
 router.put('/cancel-order/:id', userAuth, orderController.cancelOrder)
+router.post('/create-razorpay-order', userAuth, orderController.createRazorpayOrder)
+router.post('/verify-payment', userAuth, orderController.verifyPayment)
+router.get('/order-confirmed/:id', userAuth, orderController.loadOrderSuccessPage)
 
 //wishlist management
 router.get('/wishlist', userAuth, wishlistController.loadWishlist)
 router.post('/add-wishlist', userAuth, wishlistController.addToWishlist)
 router.delete('/wishlist/remove/:id', userAuth, wishlistController.removeFromWishlist)
 router.post('/wishlistAddToCart', userAuth, wishlistController.addToCartFromWishlist)
+
+//wallet managemnt
+router.get('/wallet', userAuth, walletController.loadWalletPage)
+router.get('/add-money', userAuth, walletController.getAddMoneyWallet)
+router.post('/add-money', userAuth, walletController.addMoneyWallet)
+router.post('/verify-wallet-payment', userAuth, walletController.verifyWalletPayment)
 
 
 module.exports = router

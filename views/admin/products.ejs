@@ -22,6 +22,7 @@
             <th>Category</th>
             <th>Regular Price</th>
             <th>Quantity</th>
+            <th>Offer</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
@@ -39,12 +40,22 @@
                 <td><%= product.category?.name || '-' %></td>
                 <td><%= product.regularPrice %></td>
                 <td><%= product.totalStock %> </td>
-                <td><%= product.status %></td>
+                <td>
+                  <%= product.productOffer > 0 ? product.productOffer : 0 %>%
+                </td>
+                <td class="<%= product.totalStock > 0 ? 'text-success' : 'text-danger' %>">
+                    <%= product.totalStock > 0 ? 'Available' : 'Out of stock' %>
+                </td>
                 <td>
                     <button class="btn btn-sm <%= product.isBlocked ? 'btn-success' : 'btn-warning'%> toggle-block-btn" data-product-id="<%= product._id %>" data-blocked="<%= product.isBlocked %>" >
                         <%= product.isBlocked ? 'Unblock': 'Block' %>
                     </button>
-                     <a href="/admin/edit-product/<%= product._id %>" class="btn btn-sm btn-outline-primary">Edit</a>                  
+                     <a href="/admin/edit-product/<%= product._id %>" class="btn btn-sm btn-outline-primary">Edit</a>  
+                    <% if(product.productOffer > 0) { %>
+                        <a href="#" class="btn btn-danger" onclick="removeOffer('<%= product._id %>')" >Remove Offer</a>
+                    <% } else { %>
+                        <a href="#" class="btn btn-success" onclick="addOffer('<%= product._id %>')" >Add Offer</a>
+                    <% } %>                
                 </td>
             </tr>
         <% }) %>
@@ -62,6 +73,30 @@
   </ul>
 </nav>
 </div>
+
+<!-- add offer modal -->
+ <div class="modal fade" id="offerModal" tabindex="-1" aria-labelledby="offerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="offerForm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="offerModalLabel"> Add Offer</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="entityId" id="entityId">
+          <div class="mb-3">
+            <label for="offerValue" class="form-label">Offer Percentage (%)</label>
+            <input type="number" id="offerValue" name="offerValue" min="1" max="90" class="form-control" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Apply Offer</button>
+        </div>
+      </div>
+    </form>
+  </div>
+ </div>
 <%-include('../../views/partials/admin/footer')%>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.19/dist/sweetalert2.all.min.js"></script>
 <script>
@@ -103,4 +138,101 @@
             }
         })
     })
+</script>
+<script>
+    let selectedProductId = null
+ function addOffer(productId){
+    selectedProductId = productId
+    document.getElementById('entityId').value = productId
+    document.getElementById('offerValue').value = ''
+
+    const modal = new bootstrap.Modal(document.getElementById('offerModal'))
+    modal.show()
+ }
+
+    document.getElementById('offerForm').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        const product = document.getElementById('entityId').value
+        const offerValue = document.getElementById('offerValue').value 
+        try {
+            const response = await fetch(`/admin/product/add-product-offer/${selectedProductId}`,{
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({offerValue})
+
+            })
+
+            const result = await response.json()
+            if(response.ok) {
+               const modalElement = document.getElementById('offerModal')
+               const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement)
+               modalInstance.hide()
+
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Offer Added',
+                    text: `Offer added successfully.`
+                })
+                .then(()=>{
+                    location.reload()
+                })
+            }else{
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: result.message || 'Error while adding offer'
+                })
+            }
+        } catch (error) {
+            console.error('Error while adding offer', error)
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+    })
+
+</script>
+<script>
+    async function removeOffer(productId){
+        try {
+          const confirmRemove = confirm('Are you sure wants to remove offer?')
+          if(!confirmRemove) return
+
+          const response = await fetch(`/admin/product/remove-product-offer/${productId}`, {
+                 method: 'DELETE'
+          })
+
+          const result = await response.json()
+          if(response.ok){
+            Swal.fire({
+                icon: 'success',
+                title: 'Offer Removed!',
+                text: 'Product offer removed successfully'
+            })
+            .then(()=>{
+                location.reload()
+            })
+          }else{
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops',
+                text: result.message || 'Something went wrong'
+            })
+          }
+        } catch (error) {
+            console.error('Error while removing offer', error)
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'Internal server error'
+            })
+        }
+
+    }
 </script>

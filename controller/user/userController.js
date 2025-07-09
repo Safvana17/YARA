@@ -7,6 +7,15 @@ const nodemailer = require('nodemailer')
 const env = require('dotenv')
 const { name } = require('ejs')
 
+
+//generate referral code
+function generateReferralCodeFromName(name){
+    const clearName = name.replace(/\s+/g, '').toUpperCase() // remove spaces 
+    const namePart = clearName.substring(0, 5).padEnd(5, 'X') //get first 5 letters, add X if it is not 5 characters
+    const randomDigits = Math.floor(100 + Math.random() * 900)  // reandom 3 digit number
+
+    return `YR${namePart}${randomDigits}`
+}
 //sign up page
 const loadSignup = async (req, res) => {
     try {
@@ -52,7 +61,7 @@ async function sentOtpMail(otp, email){
 //sign up
 const signup = async (req, res) => {
     try {
-        const {name, email, phone, password, confirmpassword} = req.body
+        const {name, email, phone, password, confirmpassword, referralCode} = req.body
         if(password !== confirmpassword){
             return res.render('signup',{message: "password do not match"})
         }
@@ -66,8 +75,9 @@ const signup = async (req, res) => {
            return res.json('Email send error')
         }
 
+        
         req.session.otp = otp
-        req.session.userData = {name, email, phone, password}
+        req.session.userData = {name, email, phone, password, referralCode}
         req.session.otpCreatedAt = Date.now()
         res.render('verify-otpsignup')
         console.log("otp sent", otp)
@@ -96,16 +106,61 @@ const verifyOtp = async (req, res) => {
             return res.status(400).json({success: false, message: "OTP Expired, please request new one"})
         }
         if(otp === req.session.otp){
-           const user = req.session.userData
+            const user = req.session.userData
+            let referralcode 
+            let referredBy = null
+            let isUnique = false
+            while(!isUnique){
+                referralcode = generateReferralCodeFromName(user.name)
+                const existing = await User.findOne({ referalCode: referralcode})
+                if(!existing) isUnique = true
+            }
+            
+                    if(user.referralCode){
+            const referrer = await User.findOne({ referalCode: user.referralCode})
+            if(referrer) referredBy = referrer._id
+
+            //credit 50
+            referrer.wallet += 50
+            referrer.walletTransaction.push({
+                amount: 50,
+                status: 'credited',
+                method: 'reward',
+                description: `Referral reward for inviting ${user.name}`
+            })
+            referrer.redeemedUsers.push(newUser?._id)
+
+            await referrer.save()
+            }
+           //const user = req.session.userData
            const passHash = await securePassword(user.password)
            const newUser = new User({
             name: user.name,
             email: user.email,
             phone: user.phone,
-            password: passHash
+            password: passHash,
+            referalCode: referralcode,
+            
            })
 
            await newUser.save()
+
+        // if(user.referralCode){
+        //     const referrer = await User.findOne({ referalCode: user.referralCode})
+        //     if(referrer) referredBy = referrer
+
+        //     //credit 50
+        //     referrer.wallet += 50
+        //     referrer.walletTransaction.push({
+        //         amount: 50,
+        //         status: 'credited',
+        //         method: 'reward',
+        //         description: `Referral reward for inviting ${user.name}`
+        //     })
+        //     referrer.redeemedUsers.push(newUser?._id)
+
+        //     await referrer.save()
+        //     }
            req.session.user = newUser._id
            res.status(200).json({success: true, redirectUrl: "/"})
         }else{

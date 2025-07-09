@@ -473,6 +473,18 @@ const deleteAddress = async (req, res) => {
         res.status(500).json({success: false, message: 'Internal server error'})
     }
 }
+
+//get refer and earn
+const loadReferAndEarn = async (req, res) => {
+    try {
+        const userId = req.session.user 
+        const user = await User.findById(userId)
+      res.render('referAndEarn', {user})  
+    } catch (error) {
+       console.error('Error while loading refer and earn page', error)
+       res.redirect('/pageNotFound') 
+    }
+}
 module.exports = {
     getForgotPassword,
     forgotEmailValid,
@@ -496,5 +508,6 @@ module.exports = {
     addAddress,
     getEditAddress,
     editAddress,
-    deleteAddress
+    deleteAddress,
+    loadReferAndEarn
 }

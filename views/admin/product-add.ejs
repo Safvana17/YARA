@@ -508,7 +508,7 @@ function previewImage(event, index){
 
     document.getElementById('regularprice').addEventListener('input', function() {
         const regularPrice = parseFloat(this.value);
-        const salePrice = parseFloat(document.getElementById('saleprice').value);
+        //const salePrice = parseFloat(document.getElementById('saleprice').value);
 
         if (isNaN(regularPrice) || regularPrice <= 0) {
             document.getElementById('regularprice-error').textContent = 'Regular price must be greater than zero';

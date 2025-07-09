@@ -39,6 +39,15 @@ const userSchema = new Schema({
     type: Number,
     default: 0
   },
+  walletTransaction: [
+    {
+      date: {type: Date, default: Date.now},
+      status: {type: String, enum: ['credited', 'debited'], required: true},//added, refund, used for order
+      amount: {type: Number, required: true},
+      method: {type: String, enum: ['razorpay', 'order', 'refund', 'admin', 'reward'], default: 'order'},
+      description: {type: String}
+    }
+  ],
   referalCode: {
     type: String,
     unique: true,

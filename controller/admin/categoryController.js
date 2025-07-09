@@ -1,5 +1,7 @@
 const { default: mongoose } = require('mongoose')
 const Category = require('../../models/categorySchema')
+const getBestOfferPrice = require('../../utils/offerHelper')
+const Product = require('../../models/productSchema')
 
 
 const loadCategories = async (req, res) => {
@@ -120,11 +122,84 @@ const editCategory = async (req, res) => {
         res.redirect('/admin/pageerror')
     }
 }
+
+//add offer
+const addOffer = async (req, res) => {
+    try {
+        const categoryId = req.params.id 
+        const { offerValue } = req.body
+
+        if(isNaN(offerValue) || offerValue < 1 || offerValue > 90){
+            return res.status(400).json({ success: false, message: 'Invalid offer value'})
+        }
+        const category = await Category.findById(categoryId)
+        if(!category || !category.isListed){
+            return res.status(400).json({success: false, message: 'Category not found or unlisted'})
+        }
+
+        category.categoryOffer = offerValue
+        await category.save()
+
+        const products = await Product.find({category: categoryId})
+
+        for(let product of products){
+            const productoffer = product.productOffer || 0
+            const bestOffer = getBestOfferPrice(
+                product.regularPrice,
+                productoffer,
+                offerValue
+            )
+
+            product.salePrice = bestOffer !== null ? bestOffer : product.baseSalePrice
+            await product.save()
+        }
+
+        //await Category.findByIdAndUpdate(categoryId,{categoryOffer: offerValue})
+        res.status(200).json({success: true, message: 'Offer addedd successfully.'})
+
+    } catch (error) {
+        console.error('Error while adding offer', error)
+        res.status(500).json({success: false, message :'Internal server error'})
+    }
+}
+
+//remove offer
+const removeOffer = async (req, res) => {
+    try {
+        const categoryId= req.params.id 
+        const category = await Category.findById(categoryId)
+
+        category.categoryOffer = 0
+        await category.save()
+
+        const products = await Product.find({category: categoryId}) 
+        for(let product of products){
+            const productoffer = product.productOffer || 0
+            if(productoffer === 0){
+                product.salePrice = product.baseSalePrice
+            }else{
+              const bestOffer = getBestOfferPrice(product.regularPrice, product.productOffer, 0)
+              product.salePrice = bestOffer 
+
+            }
+
+            await product.save()
+        }
+        //await Category.findByIdAndUpdate(categoryId, {categoryOffer: 0})
+        
+        res.status(200).json({success: true, message :'Offer removed'})
+    } catch (error) {
+        console.error('Error while removing offer', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
 module.exports = {
     loadCategories,
     addCategory,
     listCategory,
     unlistCategory,
     getEditCategory,
-    editCategory
+    editCategory,
+    addOffer,
+    removeOffer
 }

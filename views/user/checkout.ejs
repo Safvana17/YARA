@@ -89,7 +89,7 @@
               
             <% }) %>
           <% } else { %>
-            <p>No address found.></p>
+            <p>No address found</p>
           <% } %>
         </div>
 
@@ -100,6 +100,16 @@
             <input class="form-check-input" type="radio" name="payment" id="cod" value="cod" checked>
             <label class="form-check-label" for="cod">Cash on Delivery (COD)</label>
           </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="payment" id="razorpay" value="razorpay" >
+            <label class="form-check-label" for="razorpay">Online Payment</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="payment" id="wallet" value="wallet" >
+            <label class="form-check-label" for="wallet">wallet</label>
+          </div>
+          <input type="hidden" id="finalAmount" name="finalAmount" value="<%= finalAmount %>">
+          <input type="hidden" id="walletAmount" name="walletAmount" value="<%= user.wallet %>">
         </div>
       </div>
 
@@ -142,6 +152,8 @@
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 <script>
    async function removeItem(itemId){
     const confirmuser = confirm('Are you sure want to remove this item from the cart?')
@@ -185,54 +197,144 @@
     }
   }
 </script>
+
 <script>
-    document.getElementById('placeOrderForm').addEventListener('submit', async function (e) {
-        e.preventDefault()
+  document.getElementById('placeOrderForm').addEventListener('submit', async function (e) {
+    e.preventDefault()
+  
+    const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+    if (!selectedAddress) {
+      return Swal.fire('Please select a shipping address', '', 'warning');
+      
+    }
 
-        try {
-            const form = e.target
-            const formData = new FormData(form)
-            const plainFormData = Object.fromEntries(formData.entries())
 
-            const response = await fetch('/placeOrder', {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json'
-                },
-                body: JSON.stringify(plainFormData)
-            })
-            const result = await  response.json()
-            if(response.ok && result.success){
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Order Placed!',
-                    text: 'Your order has been placed successfully',
-                    showConfirmButton: true,
-                    showCancelButton: true,
-                    confirmButtonText: 'View Details',
-                    cancelButtonText: 'Continue Shopping'
-                })
-                .then((res) =>{
-                    if(res.isConfirmed){
-                        window.location.href = `/orderDetails/${result.orderId}`
-                    }else{
-                        window.location.href = '/shop'
-                    }
-                })
-            }else{
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Failed to place order',
-                    text: result.message || 'Something went wrong, Please try again'
-                })
-            }
-        } catch (error) {
-            console.error('Order placement failed', error)
-            Swal.fire({
-                icon: 'error',
-                title: 'Internal server error',
-                text: error.message || 'Unexpected issue occured'
-            })
+      const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value
+      const finalAmount= parseFloat(document.getElementById('finalAmount').value)
+      const walletBalance = parseFloat(document.getElementById('walletAmount').value)
+      const codLimit = 100000 //limit for cod
+
+      if(paymentMethod === 'cod'){
+        if(finalAmount > codLimit){
+          Swal.fire({
+            icon: 'warning',
+            title: 'COD not available',
+            text: `COD is only available for orders under ${codLimit}`
+          })
+        }else{
+          //proceed with cod
+          document.querySelector('.btn-success').disabled = true
+          const result = await placeOrder('cod')
+          handleOrderResult(result)
         }
+      }else if(paymentMethod === 'wallet'){
+        if(walletBalance < finalAmount){
+          Swal.fire({
+            icon: 'warning',
+            title: 'Insufficient wallet balance',
+            text: `You need atleast ${finalAmount} in your wallet`
+          })
+        }else{
+          //proceed with wallet payment
+          document.querySelector('.btn-success').disabled = true
+
+          const result = await placeOrder('wallet')
+          handleOrderResult(result)
+        }
+      }else if(paymentMethod === 'razorpay'){
+          try {
+            const amount = finalAmount
+
+            const res = await fetch(`/create-razorpay-order`,{
+              method: 'POST',
+              headers: {
+                'content-type': 'application/json'
+              },
+              body: JSON.stringify({ amount }) 
+            })
+
+            const result = await res.json()
+
+            const options = {
+              key: 'rzp_test_tMAWMle62gK3zO',
+              amount: result.amount.toString(),
+              currency: result.currency,
+              name: 'YARA',
+              description: 'Online payment',
+              order_id: result.id,
+              handler: async function (response) {
+                const verifyRes = await fetch('/verify-payment',{
+                  method: 'POST',
+                  headers: {
+                    'content-type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature
+                  })
+                })
+
+                const verifyResult = await verifyRes.json()
+                if(verifyResult.success){
+                  document.querySelector('.btn-success').disabled = true
+                  const result = await placeOrder('razorpay')
+                  handleOrderResult(result)
+                }else{
+                  Swal.fire('Payment verification failed', '', 'error')
+                }
+              },
+              theme: {
+                color: '#3399cc'
+              }
+            }
+
+            const rzp = new Razorpay(options)
+            rzp.open()
+          } catch (error) {
+            console.error('Online payment error', error)
+            Swal.fire('Something went wrong with Razorpay.', '', 'error')
+          }
+      }
     })
+
+
+
+  async function placeOrder(method) {
+    try {
+      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+      const res = await fetch('/place-order', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({ payment: method, selectedAddress: selectedAddress?.value })
+      })
+      return await res.json() //{success: true, orderId: ....}
+    } catch (error) {
+      console.error('Error while placing order', error)
+      Swal.fire({
+        icon:'error',
+        title: 'Error',
+        text: error.message || 'Internal server errror1'
+      })
+    }
+  }
+
+
+  function handleOrderResult(result){
+    if(result.success){
+      window.location.href = `/order-confirmed/${result.orderId}`
+    }else{
+      Swal.fire({
+        icon: 'error',
+        title: 'Order Failed',
+        text: 'Something went wrong placing your order. Try again.',
+        confirmButtonText: 'Retry'
+      })
+      .then(()=>{
+        window.location.reload()
+      })
+    }
+  }
 </script>

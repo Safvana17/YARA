@@ -61,10 +61,46 @@ const logout = async (req, res) => {
 const pageError = async (req, res) => {
     res.render('admin-error')
 }
+
+//refer and earn
+const loadReferralPage =async (req, res) => {
+    try {
+        const page = req.query.page || 1
+        const search = req.query.search || ''
+        const limit = 8
+        const skip = (page -1) * limit
+
+        const users = await User.find({
+            'walletTransaction': {
+                $elemMatch: {
+                    method: 'reward'
+                }
+            }
+        })
+        .populate('redeemedUsers', 'name email')
+        .select('name email referralCode redeemedUsers walletTransaction')
+        .skip(skip)
+        .limit(limit)
+
+        const count = await User.countDocuments()
+        const totalPages = Math.ceil( count / limit )
+
+        res.render('referrals', {
+            users,
+            currentPage: page,
+            totalPages,
+            search
+        })
+    } catch (error) {
+        console.error('Error while loading referrals page', error)
+        res.redirect('/pageerror')
+    }
+}
 module.exports = {
     loadLogin,
     login,
     loadDashboard,
     logout, 
-    pageError
+    pageError,
+    loadReferralPage
 }

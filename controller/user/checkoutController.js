@@ -3,6 +3,7 @@ const User = require('../../models/userSchema')
 const Product = require('../../models/productSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Cart = require('../../models/cartSchema')
+const getBestOfferPrice = require('../../utils/offerHelper')
 
 
 const loadCheckout = async (req, res) => {
@@ -17,6 +18,7 @@ const loadCheckout = async (req, res) => {
         const cartDoc = await Cart.findOne({userId}).populate('items.productId items.variantId')
         const cartItems = cartDoc ?. items || []
 
+        
         const subTotal = cartItems.reduce((acc, curr) => acc + curr.totalPrice, 0)
         const deliveryCharge = subTotal > 1000 ? 0 : 40
         const discount = 0

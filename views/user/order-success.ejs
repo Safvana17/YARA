@@ -1,0 +1,28 @@
+<%- include("../../views/partials/user/navbar") %>
+
+<div class="container text-center my-5">
+
+    <!-- Lottie Animation -->
+    <div id="success-animation" style="height: auto; width: 100%; max-width: 300px; margin: 0 auto;"></div>
+
+    <h2 class="text-success mt-4">Order Placed Successfully!</h2>
+    <p class="lead">Thank you for shopping with us. Your order <strong>#<%= order._id %></strong> has been placed and is being processed.</p>
+
+    <div class="mt-4">
+        <a href="/orderDetails/<%= order._id %>" class="btn btn-primary me-2">View Order Details</a>
+        <a href="/shop" class="btn btn-outline-secondary">Continue Shopping</a>
+    </div>
+</div>
+
+<script src="https://unpkg.com/lottie-web@5.7.4/build/player/lottie.min.js"></script>
+<script>
+    lottie.loadAnimation({
+        container: document.getElementById('success-animation'),
+        renderer: 'svg',
+        loop: false,
+        autoplay: true,
+        path: '/images/success.json' // your animation file path
+    });
+</script>
+
+<%- include("../../views/partials/user/footer") %>

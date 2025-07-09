@@ -71,26 +71,26 @@ const updateOrderStatus = async (req, res) => {
         const order = await Order.findById(orderId)
 
         if(!order){
-            return res.status(400).send('Order not found!')
+            return res.status(400).json({success: false, message: 'Order not found'})
         }
 
         if(order.status === 'Cancelled'){
-            return res.status(400).send('Cannot change the status of cancelled order')
+            return res.status(400).json({success: false, message: 'Cannot change the status of cancelled order'})
         }
         const validStatus = ['Pending', 'Shipped', 'Delivered', 'Cancelled', 'Returned']
 
         if(!validStatus.includes(status)){
-            return res.status(400).send('Invalid status update')
+            return res.status(400).json({success: false, message: 'Invalid status update'})
         }
 
         order.status = status
         await order.save()
 
-        res.redirect(`/admin/order-details/${orderId}`)
+        res.status(200).json({success: true, message: 'Order status upadated successfully'})
 
     } catch (error) {
         console.error('Error while updating the status', error)
-        re.redirect('/admin/pageerror')
+        re.status(500).json({success: false, message :'Internal server error'})
     }
 }
 
@@ -164,6 +164,7 @@ const approveReturnRequest = async (req, res) => {
     try {
         const orderId = req.params.id 
         const order = await Order.findById(orderId)
+        const user = await User.findById(order.userId._id)
 
         if(!order){
             return res.status(404).json({success: false, message: 'Order not found!'})
@@ -173,9 +174,32 @@ const approveReturnRequest = async (req, res) => {
             return res.status(400).json({success: false, message: 'Order is not in return state'})
         }
 
+        //restock product
+        for(let item of order.orderItems){
+            const variant = await ProductVariant.findById(item.variant._id)
+            if(variant){
+                variant.stockQuantity += item.quantity
+                await variant.save()
+            }
+        }
+
         order.status = 'Returned'
         await order.save()
 
+        //creidit wallet
+        const refundAmount = order.finalAmount
+        user.wallet += refundAmount
+
+        user.walletTransaction.push({
+            amount: refundAmount,
+            status: 'credited',
+            method: 'refund',
+            description: `Refund for returned order ${order.orderId}`
+        })
+
+        await user.save()
+
+        
         res.status(200).json({success: true, message: 'Oreder return request approved!'})
     } catch (error) {
         console.error('Error while approving return request', error)

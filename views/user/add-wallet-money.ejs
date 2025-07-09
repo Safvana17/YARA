@@ -1,0 +1,94 @@
+<%- include("../../views/partials/user/navbar") %>
+
+<div class="container my-5 min-vh-100">
+  <h3 class="text-center mb-4">Add Money to Wallet</h3>
+
+  <div class="card shadow-sm p-4 mx-auto" style="max-width: 500px;">
+    <form id="addMoneyForm">
+      <div class="mb-3">
+        <label for="amount" class="form-label">Enter Amount (₹)</label>
+        <input type="number" class="form-control" id="amount" required min="1" placeholder="Eg: 100">
+      </div>
+      <button type="submit" class="btn btn-success w-100">Add Money</button>
+    </form>
+  </div>
+</div>
+<%- include("../../views/partials/user/footer") %>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    document.getElementById('addMoneyForm').addEventListener('submit', async function (e) {
+        e.preventDefault()
+
+        const amount = parseInt(document.getElementById('amount').value)
+        if(!amount || amount < 1){
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops',
+                text: 'Enter a valid amount'
+            })
+        }
+
+        try {
+            const response = await fetch('/add-money', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({amount})
+            })
+
+            const result = await response.json()
+
+            const options = {
+                key: "rzp_test_tMAWMle62gK3zO",
+                amount: result.amount.toString(),
+                currency: result.currency,
+                name: 'YARA WALLET',
+                description: 'Add money to wallet',
+                order_id: result.id,
+                handler: async function (response) {
+                    const verifyRes = await fetch('/verify-wallet-payment', {
+                        method: 'POST',
+                        headers: {
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            amount
+                        })
+                    })
+                    const result = await verifyRes.json()
+                    if(result.success){
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Wallet updated', 
+                            text: 'Money added successfully'
+                        })
+                        .then(()=>{
+                            window.location.href = '/wallet'
+                        })
+                    }else{
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Payment failed',
+                            text: 'Verification failed'
+                        })
+                    }
+                },
+                theme: { color: '#0d6efd'}
+            }
+            const rzp = new Razorpay(options)
+            rzp.open()
+        } catch (error) {
+            console.error('Error', error)
+            Swal.fire({
+                icon:'error',
+                title: 'Error',
+                text: 'Something went wrong'
+            })
+        }
+    })
+</script>

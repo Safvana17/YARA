@@ -7,6 +7,7 @@ const Category = require('../../models/categorySchema')
 const path = require('path')
 const fs = require('fs')
 const sharp = require('sharp')
+const getBestOfferPrice = require('../../utils/offerHelper')
 
 
 
@@ -76,7 +77,7 @@ const getAddProducts = async (req, res) => {
 //add products
 const addProducts = async (req, res) => {
     try {
-        const {name, description, categoryId, brand, regularPrice, salePrice, color} = req.body
+        const {name, description, categoryId, brand, regularPrice,salePrice, color} = req.body
 
         const ProductExists = await Product.findOne({name: {$regex: new RegExp(`^${name}$`, 'i')}})
         if(ProductExists){
@@ -118,7 +119,6 @@ const addProducts = async (req, res) => {
             return res.status(400).json({success: false, message: 'Category not found'})
         }
 
-
        const newProduct = new Product({
         name,
         description,
@@ -126,6 +126,7 @@ const addProducts = async (req, res) => {
         category,
         regularPrice,
         salePrice,
+        baseSalePrice: salePrice,
         color,
         createdAt: new Date(),
         productImage: imageFilenames
@@ -387,6 +388,77 @@ const deleteSingleImage = async (req, res) => {
         res.status(500).json({status: false, message: 'An error occured while deleting image'})
     }
 }
+
+//add offer
+const addOffer = async (req, res) => {
+    try {
+        const productId = req.params.id 
+        const { offerValue } = req.body
+
+        if(isNaN(offerValue) || offerValue < 1 || offerValue > 90){
+            return res.status(400).json({ success: false, message: 'Invalid offer value'})
+        }
+        const product = await Product.findById(productId).populate('category')
+        if(!product || product.isBlocked){
+            return res.status(400).json({success: false, message: 'Product not found or blocked'})
+        }
+
+        const categoryoffer = product.category?.categoryoffer || 0
+        product.productOffer = offerValue
+
+        const bestPrice = getBestOfferPrice(
+            product.regularPrice,
+            offerValue,
+            categoryoffer
+        )
+
+        product.salePrice = bestPrice !== null ? bestPrice : product.baseSalePrice
+        await product.save()
+        //await Product.findByIdAndUpdate(productId,{productOffer: offerValue})
+        res.status(200).json({success: true, message: 'Offer addedd successfully.'})
+    } catch (error) {
+        console.error('Error while adding offer', error)
+        res.status(500).json({success: false, message :'Internal server error'})
+    }
+}
+
+//remove offer
+const removeOffer = async (req, res) => {
+    try {
+        const productId = req.params.id 
+        const product = await Product.findById(productId).populate('category')
+        if(!product){
+            return res.status(404).json({success: false, message: 'Product not found!'})
+        }
+
+        const categoryoffer = product.category?.categoryoffer || 0
+        product.productOffer = 0
+
+        if(categoryoffer === 0){
+            product.salePrice = product.baseSalePrice
+        }else{
+            const bestPrice = getBestOfferPrice(
+                product.regularPrice,
+                0,
+                categoryoffer
+            )
+
+            product.salePrice = bestPrice
+        }
+        await product.save()
+
+
+        //await Product.findByIdAndUpdate(productId, {productOffer: 0})
+
+        res.status(200).json({success: true, message :'Offer removed'})
+
+    } catch (error) {
+
+        console.error('Error while removing offer', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+        
+    }
+}
 module.exports = {
     LoadProducts,
     getAddProducts,
@@ -395,5 +467,7 @@ module.exports = {
     unblockProduct,
     getEditProduct,
     editProduct,
-    deleteSingleImage
+    deleteSingleImage,
+    addOffer,
+    removeOffer
 }
