@@ -58,7 +58,11 @@ const getCartPage = async (req, res) => {
 
        const grandTotal = validCartItems.reduce((total, item) => total + item.totalPrice, 0)
        const totalItems = validCartItems.reduce((total, item) => total + item.quantity, 0)
+       console.log("total:", grandTotal)
+       console.log("items:", totalItems)
 
+
+       req.session.cartTotal = grandTotal
 
        res.render('cart', {
         user,
@@ -131,8 +135,8 @@ const addToCart = async (req, res) => {
             productId,
             variantId, 
             quantity: 1, 
-            price: Number(variant.salePrice), 
-            totalPrice: Number(variant.salePrice * 1)
+            price: Number(product.salePrice), 
+            totalPrice: Number(product.salePrice * 1)
         })
         
         await cartDoc.save()
@@ -234,6 +238,7 @@ const updateQuantity = async (req, res) => {
 
         const updatedTotal = cartDoc.items.reduce((acc, curr) => acc + curr.totalPrice, 0)
 
+        req.session.cartTotal = updatedTotal
         return res.status(200).json({
             success: true,
             newQuantity: item.quantity,

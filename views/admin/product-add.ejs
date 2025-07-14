@@ -198,9 +198,9 @@
             </select>
             <div class="size-error error-message"></div>
 
-            <label for="salePrice" class="form-label">Sale Price</label>
+            <!-- <label for="salePrice" class="form-label">Sale Price</label>
             <input type="number" id="salePricevariant" name="variants[0][price]" placeholder="Sale Price" class="form-control variant-price mb-2">
-            <div class="salePrice-error error-message"></div>
+            <div class="salePrice-error error-message"></div> -->
 
             <label for="stock" class="form-label">Stock Quantity</label>
             <input type="text" id="stock" name="variants[0][stockQuantity]" placeholder="Stock" class="form-control variant-stock mb-2">
@@ -263,9 +263,6 @@
       </select>
       <div class="size-error error-message"></div>
 
-      <label for="saleprice" class="form-label">Sale Price</label>
-      <input type="number" name="variants[${variantCount}][price]" placeholder="Price" class="form-control variant-price mb-2">
-      <div class="salePrice-error error-message"></div>
 
       <label for="stock" class="form-label">Stock Quantity</label>
       <input type="number" name="variants[${variantCount}][stockQuantity]" placeholder="Stock" class="form-control variant-stock mb-2">
@@ -424,7 +421,7 @@ function previewImage(event, index){
      document.querySelectorAll('.variant').forEach((variantE1, index)=>{
         const sku = variantE1.querySelector('.variant-sku')
         const size = variantE1.querySelector('.variant-size')
-        const price = variantE1.querySelector('.variant-price')
+        // const price = variantE1.querySelector('.variant-price')
         const stock = variantE1.querySelector('.variant-stock')
 
         if(!sku.value.trim()){
@@ -437,10 +434,10 @@ function previewImage(event, index){
             variantE1.querySelector('.size-error').textContent = 'Size is required'
         }
 
-        if(!price.value.trim() || parseFloat(price.value) <= 0){
-            isValid = false
-            variantE1.querySelector('.price-error').textContent = 'Price must be greater than zero'
-        }
+        // if(!price.value.trim() || parseFloat(price.value) <= 0){
+        //     isValid = false
+        //     variantE1.querySelector('.price-error').textContent = 'Price must be greater than zero'
+        // }
 
         if(!stock.value.trim() || parseInt(stock.value) < 0){
             isValid = false

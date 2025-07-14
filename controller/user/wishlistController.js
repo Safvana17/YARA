@@ -142,8 +142,8 @@ const addToCartFromWishlist = async (req, res) => {
             productId,
             variantId, 
             quantity: 1, 
-            price: Number(variant.salePrice), 
-            totalPrice: Number(variant.salePrice * 1)
+            price: Number(product.salePrice), 
+            totalPrice: Number(product.salePrice * 1)
         })
         
         await cartDoc.save()

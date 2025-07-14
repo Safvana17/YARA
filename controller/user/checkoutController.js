@@ -4,6 +4,7 @@ const Product = require('../../models/productSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Cart = require('../../models/cartSchema')
 const getBestOfferPrice = require('../../utils/offerHelper')
+const Coupon = require('../../models/couponSchema')
 
 
 const loadCheckout = async (req, res) => {
@@ -20,10 +21,13 @@ const loadCheckout = async (req, res) => {
 
         
         const subTotal = cartItems.reduce((acc, curr) => acc + curr.totalPrice, 0)
+        console.log("subtotal:",subTotal)
         const deliveryCharge = subTotal > 1000 ? 0 : 40
         const discount = 0
-        const tax = Math.round(subTotal * 0.5) //5% tax
+        const tax = Math.round(subTotal * 0.03) //3% tax
         const finalAmount = subTotal + deliveryCharge + tax - discount
+
+        req.session.cartTotal = finalAmount
 
         res.render('checkout', {
             user,
@@ -34,7 +38,8 @@ const loadCheckout = async (req, res) => {
             shippingCharge: deliveryCharge,
             discount,
             tax,
-            finalAmount
+            finalAmount,
+            appliedCoupon: req.session.appliedCoupon || null
         })
 
     } catch (error) {
@@ -77,7 +82,31 @@ const removeItem = async (req, res) => {
     }
 }
 
+//get available coupons
+const getAvailableCoupons = async (req, res) => {
+    try {
+        const userId = req.session.user 
+        const now = new Date()
+
+        const coupons = await Coupon.find({
+            status: true,
+            startingDate: {$lte: now},
+            expiryDate: {$gte: now}
+        }).lean()
+
+        const usableCoupons = coupons.filter(coupon =>{
+            const usedCount = coupon.usedUsers.filter(id => id.toString() === userId).length
+            return usedCount < coupon.usagePerUser
+        })
+
+        res.json({success: true, coupons:usableCoupons})
+    } catch (error) {
+        console.error('Error while fetching coupon', error)
+        res.status(500).json({success: false, message: 'something went wrong'})
+    }
+}
 module.exports = { 
     loadCheckout,
-    removeItem
+    removeItem,
+    getAvailableCoupons
 }

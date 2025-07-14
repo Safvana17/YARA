@@ -64,19 +64,28 @@
           <th>Qty</th>
           <th>Unit Price</th>
           <th>Total</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
         <% order.orderItems.forEach(item => { %>
           <tr>
             <td>
-              <img src="/<%= item.product.productImage[0] %>" width="80" height="80" class="rounded shadow-sm" />
+              <img src="<%= item.product.productImage[0] %>" width="80" height="80" class="rounded shadow-sm" />
             </td>
             <td><%= item.product.name %></td>
             <td><%= item.variant.size %></td>
             <td><%= item.quantity %></td>
             <td>₹<%= item.price %></td>
             <td>₹<%= item.price * item.quantity %></td>
+            <td>
+              <% if(item.itemStatus === 'Return Request') { %>
+                  <button class="btn btn-outline-success" onclick="handleItemReturnAction('<%= order._id %>','<%= item._id %>', 'approve')">Allow</button>
+                  <button class="btn btn-outline-danger" onclick="handleItemReturnAction('<%= order._id %>','<%= item._id %>', 'reject')">Reject</button>
+              <%} else {%>
+                No action needed.
+              <% } %>
+            </td>
           </tr>
         <% }) %>
       </tbody>
@@ -160,7 +169,7 @@
         Swal.fire({
           icon: 'success',
           title: 'Updated',
-          ttext: result.message,
+          text: result.message,
           timer: 1200,
           showConfirmButton: false
         })
@@ -181,6 +190,47 @@
         title: 'Error',
         text: 'An error occured while updating the status'
       })    
+    }
+  }
+</script>
+<script>
+  async function handleItemReturnAction(orderId,itemId, action) {
+    const url = action === 'approve' ? `/admin/approve-item-return/${orderId}/${itemId}` : `/admin/cancel-item-return/${orderId}/${itemId}`
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },     
+      })
+
+      const result = await response.json()
+      if(response.ok){
+        Swal.fire({
+          icon: 'success',
+          title: action === 'approve' ? 'Return approved' : 'Return rejected',
+          text: result.message,
+          timer: 1200,
+          showConfirmButton: false
+        })
+        .then(()=>{
+          location.reload()
+        })
+      }else{
+        Swal.fire({
+          icon: 'warning',
+          title: 'Failed',
+          text: result.message || 'Something went wrong'
+        })
+      }
+    } catch (error) {
+      console.error('Return action error', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'An error occured while processing the request'
+      })
     }
   }
 </script>

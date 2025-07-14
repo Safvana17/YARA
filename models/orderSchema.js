@@ -31,7 +31,16 @@ const orderSchema = new Schema({
         price: {
             type: Number,
             default: 0
+        },
+        itemStatus: {
+            type: String,
+            default: 'Confirmed'
+        },
+        itemCancelReason: {
+            type: String,
+            default: ''
         }
+
     }],
     totalPrice: {
         type: Number,
@@ -79,9 +88,10 @@ const orderSchema = new Schema({
         default:Date.now,
         required: true
     },
-    couponApplied: {
-        type: Boolean,
-        default: false
+    appliedCoupon: {
+        type: Schema.Types.ObjectId,
+        ref: 'Coupon',
+        default: null
     }
 })
 

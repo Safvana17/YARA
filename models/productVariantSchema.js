@@ -22,10 +22,6 @@ const productVariantSchema = new Schema({
         min: 0,
         default: 0
     },
-    salePrice: {
-        type: Number,
-        default: null
-    },
     productOffer:{
         type: Number,
         default: 0

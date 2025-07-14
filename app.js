@@ -2,6 +2,7 @@ const express = require('express')
 const env = require('dotenv').config()
 const userRouter = require('./routes/userRouter')
 const adminRouter = require('./routes/adminRouter')
+const countMiddleware = require('./middleware/countMiddleware')
 const nocache = require('nocache')
 const path = require('path')
 const session = require('express-session')
@@ -32,6 +33,7 @@ app.use((req,res,next)=>{
     res.locals.user = req.session.user || null
     next()
 })
+app.use(countMiddleware)
 app.set('view engine', 'ejs')
 app.set('views',[path.join(__dirname,'views/user'), path.join(__dirname,'views/admin')])
 app.use(express.static(path.join(__dirname, 'public')))
@@ -39,6 +41,8 @@ app.use('/images', express.static('public/images'))
 
 app.use('/admin', adminRouter)
 app.use('/', userRouter)
+
+
 
 app.listen(process.env.PORT,()=>{
     console.log(`Server started at ${process.env.PORT}`)

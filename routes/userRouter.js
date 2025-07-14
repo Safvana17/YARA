@@ -72,6 +72,7 @@ router.patch('/updateQuantity/:id', userAuth, cartController.updateQuantity)
 //checkout management
 router.get('/checkout', userAuth, checkoutController.loadCheckout)
 router.delete('/removeItem/:id', userAuth, checkoutController.removeItem)
+router.get('/available-coupons', userAuth, checkoutController.getAvailableCoupons)
 
 //order management
 router.post('/place-order', userAuth, orderController.placeOrder)
@@ -79,10 +80,16 @@ router.get('/orderDetails/:id', userAuth, orderController.orderDetails)
 router.get('/orders', userAuth, orderController.getAllOrders)
 router.get('/download-invoice/:id', userAuth, orderController.getInvoice)
 router.put('/return-order/:id', userAuth, orderController.returnOrder)
+router.post('/order-item-return/:orderId/item/:itemId', userAuth, orderController.returnItemOrder)
+router.post('/order/:orderId/item/:itemId', userAuth, orderController.deleteItemOrder)
 router.put('/cancel-order/:id', userAuth, orderController.cancelOrder)
 router.post('/create-razorpay-order', userAuth, orderController.createRazorpayOrder)
 router.post('/verify-payment', userAuth, orderController.verifyPayment)
 router.get('/order-confirmed/:id', userAuth, orderController.loadOrderSuccessPage)
+router.get('/order-failed', userAuth, orderController.loadOrderFailurePage)
+router.post('/apply-coupon', userAuth, orderController.applyCoupon)
+router.get('/cancel-coupon', userAuth, orderController.deleteCoupon)
+
 
 //wishlist management
 router.get('/wishlist', userAuth, wishlistController.loadWishlist)

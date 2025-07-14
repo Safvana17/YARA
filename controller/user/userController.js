@@ -116,22 +116,22 @@ const verifyOtp = async (req, res) => {
                 if(!existing) isUnique = true
             }
             
-                    if(user.referralCode){
-            const referrer = await User.findOne({ referalCode: user.referralCode})
-            if(referrer) referredBy = referrer._id
+            //         if(user.referralCode){
+            // const referrer = await User.findOne({ referalCode: user.referralCode})
+            // if(referrer) referredBy = referrer._id
 
-            //credit 50
-            referrer.wallet += 50
-            referrer.walletTransaction.push({
-                amount: 50,
-                status: 'credited',
-                method: 'reward',
-                description: `Referral reward for inviting ${user.name}`
-            })
-            referrer.redeemedUsers.push(newUser?._id)
+            // //credit 50
+            // referrer.wallet += 50
+            // referrer.walletTransaction.push({
+            //     amount: 50,
+            //     status: 'credited',
+            //     method: 'reward',
+            //     description: `Referral reward for inviting ${user.name}`
+            // })
+            // referrer.redeemedUsers.push(newUser?._id)
 
-            await referrer.save()
-            }
+            // await referrer.save()
+            // }
            //const user = req.session.userData
            const passHash = await securePassword(user.password)
            const newUser = new User({
@@ -145,22 +145,22 @@ const verifyOtp = async (req, res) => {
 
            await newUser.save()
 
-        // if(user.referralCode){
-        //     const referrer = await User.findOne({ referalCode: user.referralCode})
-        //     if(referrer) referredBy = referrer
+        if(user.referralCode){
+            const referrer = await User.findOne({ referalCode: user.referralCode})
+            if(referrer) referredBy = referrer
 
-        //     //credit 50
-        //     referrer.wallet += 50
-        //     referrer.walletTransaction.push({
-        //         amount: 50,
-        //         status: 'credited',
-        //         method: 'reward',
-        //         description: `Referral reward for inviting ${user.name}`
-        //     })
-        //     referrer.redeemedUsers.push(newUser?._id)
+            //credit 50
+            referrer.wallet += 50
+            referrer.walletTransaction.push({
+                amount: 50,
+                status: 'credited',
+                method: 'reward',
+                description: `Referral reward for inviting ${user.name}`
+            })
+            referrer.redeemedUsers.push(newUser?._id)
 
-        //     await referrer.save()
-        //     }
+            await referrer.save()
+            }
            req.session.user = newUser._id
            res.status(200).json({success: true, redirectUrl: "/"})
         }else{

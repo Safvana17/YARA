@@ -1,0 +1,230 @@
+<%- include('../partials/admin/header') %>
+<style>
+  .error-message {
+    color: red;
+  }
+</style>
+<div class="container my-5">
+  <div class="card shadow rounded p-4">
+    <h2 class="mb-4 text-center text-uppercase text-primary">Add New Coupon</h2>
+
+    <form id="couponForm">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Coupon Code</label>
+          <input type="text" name="code" class="form-control" id="code" placeholder="Eg: SAVE20">
+          <div class="error-message" id="codeError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Coupon Type</label>
+          <select name="type" class="form-select" id="type" >
+            <option value="percentage">Percentage (%)</option>
+            <option value="fixed">Fixed Amount (₹)</option>
+          </select>
+          <div class="error-message" id="couponTypeError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Discount Value</label>
+          <div class="input-group">
+            <span class="input-group-text">%</span>
+            <input type="number" name="value" class="form-control" id="value" placeholder="Eg: 10 or 100" >
+          </div>
+          <div class="error-message" id="discountError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Minimum Order Amount (₹)</label>
+          <input type="number" name="minOrderAmount" id="minOrderAmount" class="form-control" placeholder="Eg: 500" >
+          <div class="error-message" id="minAmountError"></div>
+        </div>
+
+        <!-- <div class="col-md-6">
+          <label class="form-label">Maximum Discount (₹)</label>
+          <input type="number" name="maxDiscount" class="form-control" placeholder="(Optional)">
+        </div> -->
+
+        <div class="col-md-6">
+          <label class="form-label">Usage Limit (Total)</label>
+          <input type="number" name="usageLimit" id="usageLimit" class="form-control" value="1">
+          <div class="error-message" id="limitError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Usage Limit Per User</label>
+          <input type="number" name="usagePerUser" id="usagePerUser" class="form-control" value="1">
+          <div class="error-message" id="limitPerUserError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Starting Date</label>
+          <input type="date" name="startingDate" id="startingDate" class="form-control" >
+          <div class="error-message" id="startdateError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Expiry Date</label>
+          <input type="date" name="expiryDate" id="expiryDate" class="form-control" >
+          <div class="error-message" id="enddateError"></div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Status</label>
+          <select name="status" id="status" class="form-select">
+            <option value="true" selected>Active</option>
+            <option value="false">Inactive</option>
+          </select>
+          <div class="error-message" id="statusError"></div>
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex justify-content-between">
+        <a href="/admin/coupons" class="btn btn-outline-secondary">← Back</a>
+        <button type="submit" class="btn btn-primary px-4">Create Coupon</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<%- include('../partials/admin/footer') %>
+  <!-- Bootstrap Bundle JS (includes Popper) -->
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.getElementById('couponForm').addEventListener('submit', async function (e) {
+    e.preventDefault()
+
+    const couponCode = document.getElementById('code').value 
+    const couponType = document.getElementById('type').value
+    const discountValue = document.getElementById('value').value 
+    const minAmount = document.getElementById('minOrderAmount').value 
+    const usageLimit = document.getElementById('usageLimit').value 
+    const usagePerUser = document.getElementById('usagePerUser').value 
+    const startingDate = document.getElementById('startingDate').value 
+    const expiryDate = document.getElementById('expiryDate').value 
+    const status = document.getElementById('status').value 
+
+    const error1 = document.getElementById('codeError')
+    const error2 = document.getElementById('couponTypeError')
+    const error3 = document.getElementById('discountError')
+    const error4 = document.getElementById('minAmountError')
+    const error5 = document.getElementById('limitError')
+    const error6 = document.getElementById('limitPerUserError')
+    const error7 = document.getElementById('startdateError')
+    const error8 = document.getElementById('enddateError')
+    const error9 = document.getElementById('statusError')
+
+    console.log({ error1, error2, error3, error4, error5, error6, error7, error8, error9 });
+
+    
+    const errorFields = [error1, error2,error3, error4, error5, error6, error7, error8, error9]
+    errorFields.forEach(el => el.innerText = '')
+
+    let isValid =true
+    if(!couponCode.trim() || !couponCode.match(/^[A-Za-z0-9]{5,}$/)){
+      error1.innerText = 'Please enter a valid coupon code, (minimum include 5 alphanumeric characters)'
+      isValid = false
+    }
+
+    if(!couponType.trim()){
+      error2.innerText = 'Please select coupon type'
+      isValid = false
+    }
+
+    if(!discountValue.trim() || isNaN(discountValue) || discountValue <= 0){
+      error3.innerText = ' Please enter valid discount value'
+      isValid = false
+    }
+
+    if(!minAmount.trim() || minAmount < 1){
+      error4.innerText = 'Please enter a valid minimum amount'
+      isValid = false
+    }
+
+    if(!usageLimit.trim() || usageLimit < 1){
+      error5.innerText = 'Usage limit should be greater than 1'
+      isValid = false
+    }
+
+    if(!usagePerUser.trim() || usagePerUser < 1){
+      error6.innerText = 'Usage limit greater than 1'
+      isValid = false
+    }
+
+    let today = new Date().toISOString().split('T')[0]
+
+    if(!startingDate.trim() || startingDate < today){
+      error7.innerText = ' Starting date shuold be today or later'
+      isValid = false
+    }
+    if(!expiryDate.trim() || expiryDate <= startingDate){
+      error8.innerText = 'Expiry date should be greater than start date'
+      isValid = false
+    }
+
+    if(!status.trim()){
+      error9.innerText = 'Please select status'
+      isValid = false
+    }
+
+    if(!isValid){
+      return
+    }
+
+    const formData = {
+      code: couponCode,
+      type: couponType,
+      value: discountValue,
+      minOrderAmount: minAmount,
+      usageLimit,
+      usagePerUser,
+      startingDate,
+      expiryDate,
+      status
+    }
+    
+
+    try {
+      const response = await fetch('/admin/coupons/add', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      })
+
+      const result = await response.json()
+
+      if(response.ok && result.success){
+          Swal.fire({
+            icon: 'success',
+            title: 'Coupon Added',
+            text: 'Coupon added successfully',
+            timer: 1200,
+            showConfirmButton: false
+          })
+          .then(() =>{
+            window.location.href = '/admin/coupons'
+          })
+      }else {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Oopss',
+          text: result.message || 'Something went wrong',
+          timer: 1200,
+          showConfirmButton: false
+        })
+      }
+    } catch (error) {
+      console.error('Error while adding coupon', error)
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Internal server error'
+      })
+    }
+
+  })
+</script>

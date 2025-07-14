@@ -2,6 +2,7 @@ const User = require('../../models/userSchema')
 const Order = require('../../models/orderSchema')
 const Product = require('../../models/productSchema')
 const ProductVariant = require('../../models/productVariantSchema')
+const Coupon = require('../../models/couponSchema')
 const PDFDocument = require('pdfkit')
 
 
@@ -83,6 +84,11 @@ const updateOrderStatus = async (req, res) => {
             return res.status(400).json({success: false, message: 'Invalid status update'})
         }
 
+        for(let item of order.orderItems){
+            if(item.itemStatus !== 'Cancelled'){
+                item.itemStatus = status
+            }
+        }
         order.status = status
         await order.save()
 
@@ -221,8 +227,84 @@ const cancelReturnRequest = async (req, res) => {
             return res.status(400).json({success: false, message: 'Order not in return state!'})
         }
 
-        order.status = 'Delivered'
+        order.status = 'Rejected'
         order.cancelReason = ''
+        await order.save()
+
+        res.status(200).json({success: true, message: 'Return request rejected!'})
+    } catch (error) {
+        console.error('Error while rejecting return request', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
+
+//approve return
+const approveItemReturnRequest = async (req, res) => {
+    console.log('i')
+    try {
+        const {orderId, itemId} = req.params
+        console.log("Route Params:", req.params);
+        const order = await Order.findById(orderId)
+        const user = await User.findById(order.userId._id)
+
+        if(!order){
+            return res.status(404).json({success: false, message: 'Order not found!'})
+        }
+
+        const item = order.orderItems.id(itemId)
+        if(item.itemStatus !== 'Return Request'){
+           return res.status(400).json({success: false, message: 'Order is not in return state'})
+        }
+        //restock product
+        await ProductVariant.findByIdAndUpdate(item.variant, {
+            $inc: {stockQuantity: item.quantity}
+        })
+
+        item.itemStatus = 'Returned'
+        await order.save()
+
+        //creidit wallet
+        const refundAmount = item.price * item.quantity
+        user.wallet += refundAmount
+
+        user.walletTransaction.push({
+            amount: refundAmount,
+            status: 'credited',
+            method: 'refund',
+            description: `Refund for returned order ${order.orderId}`
+        })
+
+        await user.save()
+
+        
+        res.status(200).json({success: true, message: 'Item return request approved!'})
+    } catch (error) {
+        console.error('Error while approving return request', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
+
+//cancel return request
+const cancelItemReturnRequest = async (req, res) => {
+    try {
+        const {orderId, itemId} = req.params
+        const order = await Order.findById(orderId)
+
+        if(!order){
+            return res.status(404).json({success: false, message: 'Order not found'})
+        }
+
+        const item = order.orderItems.id(itemId)
+        if(!item){
+            return res.status(404).json({success: false, message: 'Item not found'})
+        }
+
+        if(item.itemStatus !== 'Return Request'){
+            return res.status(400).json({success: false, message: 'Item not in return state!'})
+        }
+
+        item.itemStatus = 'Rejected'
+        item.itemCancelReason = ''
         await order.save()
 
         res.status(200).json({success: true, message: 'Return request rejected!'})
@@ -237,5 +319,7 @@ module.exports = {
     updateOrderStatus,
     getInvoice,
     approveReturnRequest,
-    cancelReturnRequest
+    cancelReturnRequest,
+    approveItemReturnRequest,
+    cancelItemReturnRequest
 }

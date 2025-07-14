@@ -1,5 +1,12 @@
 <%- include("../../views/partials/user/navbar") %>
 
+<div class="bg-dark" style="color: yellowgreen;" id="couponMarqueeContainer">
+  <marquee behavior="scroll" direction="left" scrollamount="5" id="couponMarquee">
+   
+  </marquee>
+
+</div>
+
 <div class="container my-5">
   <h3 class="mb-4 text-center">Checkout</h3>
   <form action="/placeOrder" method="POST" id="placeOrderForm">
@@ -42,7 +49,7 @@
               ₹<%= item.productId.salePrice %>
             </td>
             <td class="text-end">
-              ₹<%= item.totalPrice.toFixed(2) %>
+              ₹<%= item.productId.salePrice * item.quantity %>
             </td>
             <td class="text-end">
               <!-- <a href="/removeItem/<%= item._id %>" class="btn btn-sm btn-outline-danger">Remove</a> -->
@@ -112,6 +119,7 @@
           <input type="hidden" id="walletAmount" name="walletAmount" value="<%= user.wallet %>">
         </div>
       </div>
+      
 
       <!-- Order Summary -->
       <div class="col-md-5">
@@ -128,24 +136,40 @@
           </div>
           <div class="d-flex justify-content-between">
             <span>Discount</span>
-            <span class="text-success">- ₹<%= discount %></span>
+            <span class="text-success" id="discountAmount">- ₹<%= appliedCoupon ? appliedCoupon.discount : 0 %></span>
           </div>
           <div class="d-flex justify-content-between">
-            <span>Tax ( 5% )</span>
+            <span>Tax ( 3% )</span>
             <span>₹<%= tax %></span>
           </div>
           <hr>
           <div class="d-flex justify-content-between fw-bold">
             <span>Total</span>
-            <span>₹<%= finalAmount.toFixed(2) %></span>
+            <span id="grandTotal" >₹<%= finalAmount.toFixed(2) %></span>
           </div>
 
+          <input type="hidden" name="finalAmount" id="finalAmount" value="<%= finalAmount %>">
           <button type="submit" class="btn btn-success w-100 mt-4">Place Order</button>
         </div>
       </div>
     </div>
   </form>
+  <!-- Coupon Section -->
+ <div class="col-md-5 mt-5">
+<div class="card shadow-sm p-4 mb-4">
+  <h5 class="mb-3">Apply Coupon</h5>
+  <div class="input-group">
+    <input type="text" id="couponCode" class="form-control" placeholder="Enter coupon code"
+    <%= appliedCoupon ? 'value="'+ appliedCoupon.code+ '" disabled': '' %>>
+    <button type="button" class="btn btn-success" id="applyBtn" onclick="toggleCoupon()"><%= appliedCoupon ? 'Remove Coupon' : 'Apply' %></button>
+  </div>
+  <small id="couponMessage" class="mt-2 d-block"><% if(appliedCoupon){ %> Coupon "<%= appliedCoupon.code %>" applied! <% } %></small>
 </div>
+</div>
+</div>
+
+
+
 
 <%- include("../../views/partials/user/footer") %>
   <!-- Bootstrap Bundle JS (includes Popper) -->
@@ -290,6 +314,23 @@
             }
 
             const rzp = new Razorpay(options)
+            
+
+            //razorpay payment failure handling
+            rzp.on('payment.failed', function (response){
+              console.error('Razorpay Payment Failed: ', response.error)
+
+              Swal.fire({
+                icon: 'error',
+                title: 'Payment Failed',
+                text: response.error.description || 'your payment could not be completed',
+                confirmButtonText: 'Retry Payment'
+              })
+              .then(()=>{
+                window.location.href = `/order-failed`
+              })
+            })
+
             rzp.open()
           } catch (error) {
             console.error('Online payment error', error)
@@ -329,7 +370,7 @@
       Swal.fire({
         icon: 'error',
         title: 'Order Failed',
-        text: 'Something went wrong placing your order. Try again.',
+        text: result.message || 'Something went wrong placing your order. Try again.',
         confirmButtonText: 'Retry'
       })
       .then(()=>{
@@ -337,4 +378,76 @@
       })
     }
   }
+</script>
+<script>
+  async function toggleCoupon(){
+    const codeInput = document.getElementById('couponCode')
+    const message = document.getElementById('couponMessage')
+    const applyBtn = document.getElementById('applyBtn')
+
+    if(applyBtn.innerText === 'Apply'){
+      const code = codeInput.value.trim()
+      if(!code) return message.innerText = 'Enter a coupon code'
+ 
+      console.log("Coupon code entered:", code)
+
+    
+      const response = await fetch('/apply-coupon', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({code})
+      })
+
+      const result = await response.json()
+
+      if(response.ok){
+        applyBtn.innerText = 'Remove Coupon'
+        codeInput.disabled = true
+        document.getElementById('discountAmount').innerText = `-₹${result.discount}`
+        document.getElementById('grandTotal').innerText = `₹${result.newTotal}`
+        document.getElementById('finalAmount').value = result.newTotal
+        message.innerText = `Coupon ${code.toUpperCase()} Applied`
+      }else{
+        message.innerText = result.message
+        message.classList.add('text-dange')
+      }
+      
+    }else{
+      await fetch('/cancel-coupon')
+      applyBtn.innerText = 'Apply'
+      codeInput.disabled = false
+      codeInput.value = ''
+      message.innerText = ''
+      document.getElementById('discountAmount').innerText = '-₹0'
+      const base = <%= totalAmount %> + <%= shippingCharge %> + <%= tax %>
+      document.getElementById('grandTotal').innerText = `₹${base}`
+      document.getElementById('finalAmount').value = base
+
+    }
+  }
+</script>
+<script>
+  fetch('/available-coupons')
+  .then(res => res.json())
+  .then(data => {
+    if(data.success && data.coupons.length > 0){
+      const marquee = document.getElementById('couponMarquee')
+      marquee.innerText = data.coupons.map(coupon =>{
+
+        const expiry = new Date(coupon.expiryDate)
+            .toLocaleDateString('en-GB')
+
+        const offer = coupon.type === 'percentage' ? `${coupon.value}% OFF` : `${coupon.value} OFF`
+        return `Use code ${coupon.code} for ${offer} for Minimum oreder ₹${coupon.minOrderAmount} valid till ${expiry}`
+      }).join("   |   ")
+    }else{
+      document.getElementById('couponMarquee').innerText = 'No active coupons available!!'
+    }
+  })
+  .catch(error =>{
+    console.error('Error fetching coupons:', error)
+    document.getElementById('couponMarquee').innerText = 'Unable to load Offers'
+  })
 </script>

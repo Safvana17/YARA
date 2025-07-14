@@ -1,0 +1,98 @@
+<%-include('../../views/partials/admin/header')%>
+
+
+<div class="container mt-4">
+  <h2 class="mb-4">Sales Report</h2>
+
+  <!-- Filter Form -->
+  <form method="GET" action="/admin/report/generate" class="row g-3 mb-4">
+    <div class="col-md-3">
+      <label for="rangeType" class="form-label">Select Report Type</label>
+      <select class="form-select" id="rangeType" name="rangeType" required>
+        <option value="day">Today</option>
+        <option value="week">This Week</option>
+        <option value="month">This Month</option>
+        <option value="custom">Custom Range</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label for="startDate" class="form-label">Start Date</label>
+      <input type="date" class="form-control" id="startDate" name="startDate">
+    </div>
+
+    <div class="col-md-3">
+      <label for="endDate" class="form-label">End Date</label>
+      <input type="date" class="form-control" id="endDate" name="endDate">
+    </div>
+
+    <div class="col-md-3 d-flex align-items-end">
+      <button type="submit" class="btn btn-primary w-100">Generate Report</button>
+    </div>
+  </form>
+
+  <% if (salesData && salesData.length > 0) { %>
+    <!-- Summary -->
+    <div class="mb-3">
+      <p><strong>Total Orders:</strong> <%= totalSale %></p>
+      <p><strong>Total Sales Amount:</strong> ₹<%= totalAmount %></p>
+      <p><strong>Total Discount:</strong> ₹<%= totalDiscount %></p>
+      <p><strong>Total Offer:</strong> ₹<%= totalOffer %></p>
+    </div>
+
+    <!-- Report Table -->
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead class="table-light">
+          <tr>
+            <th>Order ID</th>
+            <th>User</th>
+            <th>Date</th>
+            <th>Payment</th>
+            <th>Total Amount</th>
+            <th>Discount</th>
+            <th>Offer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% salesData.forEach((sale) => { %>
+            <tr>
+              <td><%= sale.orderId %></td>
+              <td><%= sale.user %></td>
+              <td><%= sale.date %></td>
+              <td><%= sale.payment %></td>
+              <td>₹<%= sale.totalAmount %></td>
+              <td>₹<%= sale.discount %></td>
+              <td>₹<%= sale.offer %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+      <div class="mb-4">
+  <a href="/admin/report/generate?rangeType=<%= rangeType %>&startDate=<%= startDate %>&endDate=<%= endDate %>&format=pdf" class="btn btn-danger me-2">Download PDF</a>
+  <a href="/admin/report/generate?rangeType=<%= rangeType %>&startDate=<%= startDate %>&endDate=<%= endDate %>&format=excel" class="btn btn-success">Download Excel</a>
+</div>
+
+    </div>
+  <% } else { %>
+    <div class="alert alert-warning">No sales data found for the selected range.</div>
+  <% } %>
+  <nav>
+  <ul class="pagination justify-content-center">
+    <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= i == currentPage ? 'active' : '' %>">
+        <a class="page-link" href="/admin/report=<%= i %>&search=<%= search %>"><%= i %></a>
+      </li>
+    <% } %>
+  </ul>
+</nav>
+</div>
+
+
+
+<%-include('../../views/partials/admin/footer')%>
+<script>
+function toggleDateInputs(value) {
+  document.getElementById("custom-range").style.display = value === 'custom' ? 'block' : 'none';
+}
+</script>

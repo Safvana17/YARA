@@ -4,6 +4,7 @@ const Product =require('../../models/productSchema')
 const Address = require('../../models/addressSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Order = require('../../models/orderSchema')
+const Coupon = require('../../models/couponSchema')
 const razorpayInstance = require('../../utils/razorpayInstance')
 const puppeteer = require('puppeteer')
 const path = require('path')
@@ -11,7 +12,8 @@ const ejs = require('ejs')
 const fs = require('fs')
 const Razorpay = require('razorpay')
 const crypto = require('crypto')
-
+const { count } = require('console')
+const mongoose = require('mongoose')
 //create razorpay order
 const createRazorpayOrder = async (req, res) => {
     try {
@@ -103,21 +105,48 @@ const placeOrder = async (req, res) => {
         }
 
         const shippingCharge = subTotal > 1000 ? 0 : 40
-        const discount= 0
-        const tax = Math.round(subTotal * 0.5)
+
+        let appliedCoupon = null
+        let discount= 0
+        if(req.session.appliedCoupon){
+            discount = req.session.appliedCoupon.discount || 0
+            appliedCoupon = req.session.appliedCoupon.couponId
+            const objectUserId =new mongoose.Types.ObjectId(userId)
+
+            // await Coupon.findByIdAndUpdate(req.session.appliedCoupon.couponId, {
+            //     $inc: { count: 1},
+            //     $addToSet: { usedUsers: objectUserId}
+            // })
+            const coupon = await Coupon.findById(appliedCoupon)
+            if(coupon){
+                coupon.usedCount += 1
+
+                const userEntry = coupon.usedUsers.find(entry => entry,userId.toString() === userId.toString())
+                
+                if(userEntry){
+                    userEntry.count += 1
+                }else{
+                    coupon.usedUsers.push({userId, count: 1})
+                }
+
+                await coupon.save()
+            }
+        }
+
+        const tax = Math.round(subTotal * 0.03)
         const totalAmount = shippingCharge + subTotal + tax - discount
 
         //handle wallet deduction
         if(payment === 'wallet'){
-              console.log('✅ Entered wallet payment block')
+              console.log(' Entered wallet payment block')
             try{
             const user = await User.findById(userId)
             if(user.wallet < totalAmount) {
-                  console.log('✅ Entered wallet payment block1')
+                  console.log(' Entered wallet payment block1')
                 return res.status(400).json({success: false, message: 'Insufficient wallet amount'})
             }
 
-              console.log('✅ Entered wallet payment block2')
+              console.log(' Entered wallet payment block2')
             user.wallet -= totalAmount
 
             //save wallet transaction
@@ -125,7 +154,8 @@ const placeOrder = async (req, res) => {
                 
                 date: Date.now(),
                 amount: totalAmount,
-                status: 'debited'
+                status: 'debited',
+                method: "order"
             })
 
              await user.save()
@@ -153,10 +183,15 @@ const placeOrder = async (req, res) => {
             shippingCharge,
             tax,
             discount,
-            finalAmount: totalAmount
+            finalAmount: totalAmount,
+            appliedCoupon
         })
 
         await newOrder.save()
+
+        if(req.session.appliedCoupon){
+            delete req.session.appliedCoupon
+        }
 
         //decrease stock
         for(let item of orderItems){
@@ -171,6 +206,8 @@ const placeOrder = async (req, res) => {
 
         res.status(200).json({success: true, message: 'Order placed', orderId: newOrder._id})
     } catch (error) {
+            console.error(' Error while making an order:', error.message);
+    console.error(error.stack);
         console.error('Error while making an order', error)
         res.status(500).json({success: false, message: 'Internal server error'})
     }
@@ -189,6 +226,23 @@ const loadOrderSuccessPage = async (req, res) => {
         }
 
         res.render('order-success', { order })
+    } catch (error) {
+        console.error('Error while loading order success page', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
+
+//order failure page
+const loadOrderFailurePage = async (req, res) => {
+    try {
+        const userId = req.session.user 
+        // const orderId = req.params.id 
+        // const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
+        // if(!order){
+        //     return res.status(404).json({ success: false, message: 'Order not found'})
+        // }
+
+        res.render('order-failed', )
     } catch (error) {
         console.error('Error while loading order success page', error)
         res.status(500).json({success: false, message: 'Internal server error'})
@@ -332,13 +386,13 @@ const returnOrder = async (req, res) => {
              return res.status(400).json({success: false, message: 'Order Alredy returned.'})
         }
 
-        for(let item of order.orderItems){
-            const variant = await ProductVariant.findById(item.variant._id)
-            if(variant){
-                variant.stockQuantity += item.quantity
-                await variant.save()
-            }
-        }
+        // for(let item of order.orderItems){
+        //     const variant = await ProductVariant.findById(item.variant._id)
+        //     if(variant){
+        //         variant.stockQuantity += item.quantity
+        //         await variant.save()
+        //     }
+        // }
 
         order.status = 'Return Request'
         order.cancelReason = reason
@@ -401,6 +455,148 @@ const cancelOrder = async (req, res) => {
         res.status(500).json({success: false, message: 'Internal server error'})
     }
 }
+
+//apply coupon
+const applyCoupon = async (req, res) => {
+    try {
+        const {code} = req.body
+        const userId = req.session.user.toString()
+        console.log("code:", code)
+        const coupon = await Coupon.findOne({code: code.toUpperCase(), status: true})
+        console.log('coupons:', coupon)
+        if(!coupon){
+            return res.status(400).json({success: false, message: 'Invalide coupon code'})
+        }
+
+        const now = new Date()
+        if(now < coupon.startingDate || now > coupon.expiryDate){
+            return res.status(400).json({success: false, message: 'Coupon is not active'})
+        }
+
+        
+        if( coupon.usedCount >= coupon.usageLimit){
+            return res.status(400).json({success: false, message: `Coupon usage limite exceeded`})
+        }
+
+        const userUsage = coupon.usedUsers.find(entry => entry.userId?.toString() === userId)
+        const userUsedCount = userUsage ? userUsage.count : 0
+        if(userUsedCount >= coupon.usagePerUser){
+            return res.status(400).json({success: false, message: `you already used this coupon ${coupon.usagePerUser} times`})
+        }
+
+        const cartTotal = req.session.cartTotal 
+        if(cartTotal < coupon.minOrderAmount){
+            return res.status(400).json({success: false, message: `Minimum order ₹${coupon.minOrderAmount}`})
+        }
+
+        const discount = coupon.type === 'percentage' ? Math.floor(cartTotal * coupon.value / 100) : coupon.value
+        
+        const newTotal = cartTotal - discount
+        req.session.appliedCoupon = {
+            code: coupon.code,
+            discount,
+            couponId: coupon._id 
+        }
+        res.status(200).json({discount, newTotal})
+
+    } catch (error) {
+        console.error('Error while applying coupon', error)
+        res.status(500).json({message: 'Something went wrong'})
+    }
+}
+//remove coupon 
+const deleteCoupon = async (req, res) => {
+    try {
+        delete req.session.appliedCoupon
+        res.sendStatus(200)
+    } catch (error) {
+        console.error('Error while deleting coupon', error)
+        res.sendStatus(500)
+    }
+}
+
+//delte item order
+const deleteItemOrder = async (req, res) => {
+    try {
+        const userId = req.session.user
+        const {orderId, itemId} = req.params
+        const {reason} = req.body
+
+        const user = await User.findById(userId)
+
+        const order = await Order.findById(orderId)
+        if(!order){
+            return res.status(404).json({success: false, message: 'Order not found!'})
+        }
+
+        const item = await order.orderItems.id(itemId)
+        if(!item){
+            return res.status(404).json({success: false, message: 'Item not found!'})
+        }
+
+
+        await ProductVariant.findByIdAndUpdate(item.variant,{
+          $inc: { stockQuantity: item.quantity}
+        })
+
+
+        item.itemStatus = 'Cancelled',
+        item.itemCancelReason = reason
+        await order.save()
+
+        if(order.payment === 'razorpay' || order.payment === 'wallet'){
+            const refundAmount = item.price * item.quantity
+            user.wallet += refundAmount
+
+            user.walletTransaction.push({
+                amount: refundAmount,
+                status: 'credited',
+                method: 'refund',
+                description: `Refund for ${order.status.toLowerCase()} order ${order.orderId}.`
+            })
+
+            await user.save()
+        }
+
+        res.status(200).json({success: true, message: 'Order cancelled'})
+    } catch (error) {
+        console.error('Error while cancelling item from order', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
+
+//return item
+const returnItemOrder = async (req, res) => {
+    try {
+        const userId = req.session.user
+        const {reason } = req.body
+        const {orderId, itemId} = req.params
+        const order = await Order.findOne({_id: orderId, userId})
+        const user = await User.findById(userId)
+
+        if(!order){
+            return res.status(404).json({success: false, message: 'Order not found!'})
+        }
+        const item = await order.orderItems.id(itemId)
+        if(['returned'].includes(item.itemStatus)){
+             return res.status(400).json({success: false, message: 'Order Alredy returned.'})
+        }
+
+    //    await ProductVariant.findByIdAndUpdate(item.variant, {
+    //     $inc: {stockQuantity: item.quantity}
+    //    })
+
+        item.itemStatus = 'Return Request'
+        item.itemCancelReason = reason
+        await order.save()
+
+        return res.status(200).json({success: true, message: 'Order return request submitted'})
+    } catch (error) {
+        console.error('Error while cancelling order', error)
+        res.status(500).json({success: false, message: 'Internal server error'})
+    }
+}
+
 module.exports = {
     placeOrder,
     orderDetails,
@@ -410,5 +606,10 @@ module.exports = {
     cancelOrder,
     createRazorpayOrder,
     verifyPayment,
-    loadOrderSuccessPage
+    loadOrderSuccessPage,
+    loadOrderFailurePage,
+    applyCoupon,
+    deleteCoupon,
+    deleteItemOrder,
+    returnItemOrder
 }

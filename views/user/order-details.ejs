@@ -32,18 +32,28 @@
           <th>Qty</th>
           <th>Unit Price</th>
           <th>Total Amount</th>
+          <th>Action / Status</th>
         </tr>
       </thead>
       <tbody>
         <% order.orderItems.forEach(item => { %>
           <tr>
             <td style="width: 120px;">
-              <img src="/<%= item.product.productImage[0] %>" alt="<%= item.product.name %>" width="100" height="100" class="rounded shadow-sm">
+              <img src="<%= item.product.productImage[0] %>" alt="<%= item.product.name %>" width="100" height="100" class="rounded shadow-sm">
             </td>
             <td class="ml-2"><%= item.product.name %> - <%= item.variant.size %></td>
             <td><%= item.quantity %></td>
             <td>₹<%= item.price %></td>
             <td><%= item.price * item.quantity %></td>
+            <td>
+              <% if(item.itemStatus === 'Confirmed') { %>
+                <button class="btn btn-outline-danger" onclick="deleteOrderedItem('<%= order._id %>', '<%= item._id %>')">Cancel Item</button>
+              <% } else if(item.itemStatus === 'Delivered'){ %>
+                <button class="btn btn-outline-warning" onclick="returnOrderedItem('<%= order._id %>', '<%= item._id %>')">Return Item</button>
+              <% } else {%>
+                <h4 class="text-danger"><%= item.itemStatus %></h4>
+              <% } %>
+            </td>
           </tr>
         <% }) %>
       </tbody>
@@ -62,7 +72,10 @@
 <div class="d-flex justify-content-end mt-3 gap-3">
   <a href="/download-invoice/<%= order._id %>" class="btn btn-outline-primary">Download Invoice</a>
 
-  <% if(order.status !== 'Delivered' && order.status !== 'Cancelled' && order.status !== 'Return Request' ) { %>
+  <% const allCancellable = order.orderItems.every(item => item.itemStatus === 'Confirmed') %>
+  <% const allReturnable = order.orderItems.every(item => item.itemStatus === 'Delivered')%>
+
+  <% if( allCancellable && order.status !== 'Delivered' && order.status !== 'Cancelled' && order.status !== 'Return Request' ) { %>
     <!-- Cancel Button -->
     <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">Cancel Order</button>
 
@@ -92,7 +105,8 @@
       </div>
     </div>
 
-  <% } else if(order.status === 'Delivered') { %>
+    
+  <% } else if( allReturnable && order.status === 'Delivered' && order.status !== 'Rejected' && order.status !== 'Returned') { %>
     <!-- Return Button -->
     <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#returnModal">Return Order</button>
 
@@ -229,5 +243,89 @@
         text: error.message || 'Internal server error'
       })
     }
+  }
+</script>
+<script>
+  async function deleteOrderedItem(orderId, itemId) {
+    const {value: reason} = await Swal.fire({
+      title: 'Are you sure?Reason for Cancel',
+      input: 'select',
+      inputOptions: {
+        'changed my mind': 'Changed my mind',
+        'Ordered wrong item': 'ordered wrong item',
+        'Item not needed': 'Item not needed',
+        'other': 'Other'
+      },
+      inputPlaceholder: ' Select a reason',
+      showCancelButton: true,
+      confirmButtonText: 'Cancel item',
+      inputValidator: (value) => {
+        if(!value) return 'You need to select a reason!'
+      }
+    })
+
+    if(!reason) return
+     try {
+      const response = await fetch(`/order/${orderId}/item/${itemId}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({reason})
+      })
+
+      const result = await response.json()
+
+      if(response.ok && result.success){
+        Swal.fire('Cancelled!', result.message, 'success').then(()=> location.reload())
+      }else{
+        Swal.fire('Oops!', result.message|| 'Failed to cancel item', 'error')
+      }
+     } catch (error) {
+      console.error('Error while deleting an item from order', error)
+      Swal.fire('Error!','Somthing went wrong', 'error')
+     }
+  }
+</script>
+<script>
+  async function returnOrderedItem(orderId, itemId) {
+    const {value: reason} = await Swal.fire({
+      title: 'Reason for Return',
+      input: 'select',
+      inputOptions: {
+        'changed my mind': 'Changed my mind',
+        'Delivered wrong item': 'Delivered wrong item',
+        'Item not needed': 'Item not needed',
+        'other': 'Other'
+      },
+      inputPlaceholder: ' Select a reason',
+      showCancelButton: true,
+      confirmButtonText: 'Return item',
+      inputValidator: (value) => {
+        if(!value) return 'You need to select a reason!'
+      }
+    })
+
+    if(!reason) return
+     try {
+      const response = await fetch(`/order-item-return/${orderId}/item/${itemId}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({reason})
+      })
+
+      const result = await response.json()
+
+      if(response.ok && result.success){
+        Swal.fire('Return Requested!', result.message, 'success').then(()=> location.reload())
+      }else{
+        Swal.fire('Oops!', result.message|| 'Failed to make return request item', 'error')
+      }
+     } catch (error) {
+      console.error('Error while making return request from order', error)
+      Swal.fire('Error!','Somthing went wrong', 'error')
+     }
   }
 </script>

@@ -40,20 +40,34 @@
               <li><a href="/logout" class="dropdown-item">Logout</a></li>
             </ul>
           </li>
-          <li class="nav-item"><a class="nav-link" href="/cart"><i class="bi bi-cart3"></i></a></li>
-          <li class="nav-item"><a class="nav-link" href="/wishlist"><i class="bi bi-heart-fill"></i></a></li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="/cart">
+              <i class="bi bi-cart3 fs-5"></i>
+              <% if(cartCount > 0) { %>
+                <span class="position-absolute top-0 start-80 translate-middle badge rounded-pill bg-danger"> <%= cartCount %></span>
+              <% } %>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link position-relative" href="/wishlist">
+              <i class="bi bi-heart fs-5"></i>
+               <% if(wishlistCount > 0) { %>
+                <span class="position-absolute top-0 start-80 translate-middle badge rounded-pill bg-danger"> <%= wishlistCount %></span>
+              <% } %>             
+            </a>
+          </li>
         <% } else { %>
            <li class="nav-item"><a class="nav-link" href="/signup">Sign Up</a></li>
           <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
         <% } %>
-          <li class="nav-item">
+          <!-- <li class="nav-item">
             <form class="d-flex ms-3" role="search" action="/search" method="GET">
               <input class="form-control me-2" type="search" name="search" placeholder="Search products..." aria-label="Search">
                <button class="btn btn-outline-dark" type="submit">
                <i class="bi bi-search"></i>
              </button>
            </form>
-          </li>
+          </li> -->
       </ul>
     </div>
   </div>

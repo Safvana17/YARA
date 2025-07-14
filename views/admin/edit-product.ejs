@@ -154,11 +154,11 @@
                 </select>
                 <div id="size-error-<%= index %>" class="error-message"></div>
               </div>
-              <div class="col-md-3">
+              <!-- <div class="col-md-3">
                 <label class="form-label">Price</label>
                 <input type="number" name="variants[<%= index %>][price]" class="form-control" value="<%= variant.salePrice %>">
                 <div id="price-error-<%= index %>" class="error-message"></div>
-              </div>
+              </div> -->
               <div class="col-md-3">
                 <label class="form-label">Stock</label>
                 <input type="number" name="variants[<%= index %>][stock]" class="form-control" value="<%= variant.stockQuantity %>">
@@ -177,7 +177,7 @@
                             <div class="col-md-3 mb-3">
                                 <div class="card">
                                     <% if(product.productImage[i]) { %>
-                                        <img src="/<%= product.productImage[i] %>" class="card-img-top" alt="Product Image">
+                                        <img src="<%= product.productImage[i] %>" class="card-img-top" alt="Product Image">
                                         <div class="card-body">
                                             <button type="button" class="btn btn-danger btn-sm" onclick="deleteSingleImage('<%= product.productImage[i] %>', '<%= product._id %>', <%= i %>)">Delete</button>
                                         </div>
@@ -319,17 +319,17 @@
 
         // Variant validations
 const variantSkus = document.querySelectorAll('input[name^="variants"][name$="[sku]"]');
-const variantPrices = document.querySelectorAll('input[name^="variants"][name$="[price]"]');
+// const variantPrices = document.querySelectorAll('input[name^="variants"][name$="[price]"]');
 const variantStocks = document.querySelectorAll('input[name^="variants"][name$="[stock]"]');
 
 variantSkus.forEach((_, i) => {
   document.getElementById(`sku-error-${i}`).textContent = ''
-  document.getElementById(`price-error-${i}`).textContent = ''
+//   document.getElementById(`price-error-${i}`).textContent = ''
   document.getElementById(`stock-error-${i}`).textContent = ''
 })
 for (let i = 0; i < variantSkus.length; i++) {
     const sku = variantSkus[i].value.trim();
-    const price = parseFloat(variantPrices[i].value);
+    // const price = parseFloat(variantPrices[i].value);
     const stock = parseInt(variantStocks[i].value);
 
     if (!sku) {
@@ -338,11 +338,11 @@ for (let i = 0; i < variantSkus.length; i++) {
        
     }
 
-    if (isNaN(price) || price <= 0) {
-        isValid = false;
-        document.getElementById(`price-error-${i}`).textContent = 'Price is required'
+    // if (isNaN(price) || price <= 0) {
+    //     isValid = false;
+    //     document.getElementById(`price-error-${i}`).textContent = 'Price is required'
         
-    }
+    // }
 
     if (isNaN(stock) || stock < 0) {
         isValid = false;
@@ -352,7 +352,7 @@ for (let i = 0; i < variantSkus.length; i++) {
 }
 
 
-        // ✅ Check if exactly 5 images are uploaded, cropped, or exist
+        //  Check if exactly 5 images are uploaded, cropped, or exist
         let existingImages = <%- JSON.stringify(product.productImage) %>;
 let imageUploadedCount = 0;
 

@@ -3,6 +3,7 @@
 
 <div class="container my-5 min-vh-100">
   <h3 class="mb-4 text-center">Shopping Cart</h3>
+<p>Debug: User = <%= user ? user.name : "No user" %></p>
 
   <% if (cartItems.length === 0) { %>
     <div class="text-center">
@@ -38,7 +39,12 @@
               <div class="col-md-2 text-center">
                 <div class="d-flex justify-content-center align-items-center gap-2">
                   <button onclick="updateQuantity('<%= item._id %>', -1)" class="btn btn-sm btn-outline-danger">-</button>
-                  <span><%= item.quantity %></span>
+                  <span><% if(item.variantId.stockQuantity <= 3 && item.quantity > 3) {%>
+                      <%= item.variantId.stockQuantity %>
+                    <% } else { %>
+                      <%= item.quantity %>
+                    <% } %>
+                   </span>
                   <button onclick="updateQuantity('<%= item._id %>', 1)" class="btn btn-sm btn-outline-success">+</button>
                 </div>
               </div>

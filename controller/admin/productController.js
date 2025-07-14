@@ -7,6 +7,7 @@ const Category = require('../../models/categorySchema')
 const path = require('path')
 const fs = require('fs')
 const sharp = require('sharp')
+const cloudinary = require('../../utils/cloudinary')
 const getBestOfferPrice = require('../../utils/offerHelper')
 
 
@@ -42,8 +43,9 @@ const LoadProducts = async (req, res) => {
             productsWithStock.push({...product._doc, totalStock})
         }
         let sum = 0
-        for(let product of products){
-            sum += product.regularPrice 
+        const prod = await Product.find({})
+        for(let p of prod){
+            sum += p.regularPrice 
         }
         
         res.render('products',{
@@ -84,29 +86,50 @@ const addProducts = async (req, res) => {
             return res.status(400).json({success: false, message: 'Product already exists, please try another name'})
         }
 
-        const uploadDir = path.join(__dirname, '../../public/images')
-        if(!fs.existsSync(uploadDir)){
-            fs.mkdirSync(uploadDir, {recursive: true})
-        }
+        // const uploadDir = path.join(__dirname, '../../public/images')
+        // if(!fs.existsSync(uploadDir)){
+        //     fs.mkdirSync(uploadDir, {recursive: true})
+        // }
+
+        // const imageFilenames = []
+        // for(let i=1; i<= 5; i++){
+        //   const croppedImageData = req.body[`croppedImages${i}`]
+
+        //   const filename = Date.now() + "-" + `cropped-image-${i}` + ".webp";
+        //   const filepath = path.join(uploadDir, filename);
+
+        //   if(croppedImageData && croppedImageData.startsWith('data:image')){
+        //     const base64Data = croppedImageData.replace(/^data:image\/\w+;base64,/, '')
+        //     const imageBuffer = Buffer.from(base64Data, 'base64')
+
+        //     await sharp(imageBuffer)
+        //           .webp({quality: 80})
+        //           .toFile(filepath)
+
+        //     imageFilenames.push(`images/${filename}`)
+        //   }
+        // }
+
 
         const imageFilenames = []
-        for(let i=1; i<= 5; i++){
-          const croppedImageData = req.body[`croppedImages${i}`]
+        for(let i=1; i<=5; i++){
+        const croppedImageData = req.body[`croppedImages${i}`]
 
-          const filename = Date.now() + "-" + `cropped-image-${i}` + ".webp";
-          const filepath = path.join(uploadDir, filename);
-
-          if(croppedImageData && croppedImageData.startsWith('data:image')){
+        if(croppedImageData && croppedImageData.startsWith('data:image')){
             const base64Data = croppedImageData.replace(/^data:image\/\w+;base64,/, '')
             const imageBuffer = Buffer.from(base64Data, 'base64')
 
-            await sharp(imageBuffer)
-                  .webp({quality: 80})
-                  .toFile(filepath)
+            //convert buffer to temporary data URI file for upload
+            const tempFilePath = `data:image/webp;base64,${imageBuffer.toString('base64')}`
 
-            imageFilenames.push(`images/${filename}`)
-          }
+            const uploadResponse = await cloudinary.uploader.upload(tempFilePath,{
+                folder: 'yara-images',
+                format: 'jpeg'
+
+            })
+            imageFilenames.push(uploadResponse.secure_url)
         }
+    }
  
         console.log(Object.keys(req.body)) // To check what croppedImages# keys you're receiving
 
@@ -146,7 +169,7 @@ const addProducts = async (req, res) => {
                 productId: newProduct._id,
                 sku: variant.sku,
                 size: variant.size,
-                salePrice: variant.price,
+                // salePrice: variant.price,
                 stockQuantity: variant.stockQuantity
 
             })
@@ -213,7 +236,7 @@ const getEditProduct = async (req, res) => {
 const editProduct = async (req, res) => {
     try {
         const productId = req.params.id
-        const {name, description, categoryId, brand, regularPrice, salePrice, color} = req.body
+        const {name, description, categoryId, brand, regularPrice, color} = req.body
         const existingProduct = await Product.findOne({
             name:{$regex: new RegExp(`^${name}$`, 'i')},
             _id: {$ne: productId}
@@ -229,7 +252,7 @@ const editProduct = async (req, res) => {
             categoryId,
             brand,
             regularPrice,
-            salePrice,
+            // salePrice,
             color
         }
 
@@ -238,47 +261,114 @@ const editProduct = async (req, res) => {
             return res.status(404).json({status: false, message: 'Product not found'})
         }
 
-        for(let i=1; i<= 5; i++){
-            const croppedImageData = req.body[`croppedImage${i}`]
+        // for(let i=1; i<= 5; i++){
+        //     const croppedImageData = req.body[`croppedImage${i}`]
 
-            if(croppedImageData && croppedImageData.startsWith('data: image')){
-                const base64Data = croppedImageData.replace(/^data:image\/\w+;base64,/, '')
-                const imageBuffer = Buffer.from(base64Data, 'base64')
+        //     if(croppedImageData && croppedImageData.startsWith('data: image')){
+        //         const base64Data = croppedImageData.replace(/^data:image\/\w+;base64,/, '')
+        //         const imageBuffer = Buffer.from(base64Data, 'base64')
 
-                const filename = Date.now() + '-' + `cropped-image-${i}` + ".webp"
-                const filepath = path.join(__dirname, '../../public/images', filename)
+        //         const filename = Date.now() + '-' + `cropped-image-${i}` + ".webp"
+        //         const filepath = path.join(__dirname, '../../public/images', filename)
 
-                await sharp(imageBuffer)
-                      .webp({quality: 80})
-                      .toFile(filepath)
+        //         await sharp(imageBuffer)
+        //               .webp({quality: 80})
+        //               .toFile(filepath)
 
-                const imagePath = `images/${filename}`
+        //         const imagePath = `images/${filename}`
 
-                if(product.productImage[i-1]){
-                    product.productImage[i-1] = imagePath
-                }else {
-                    product.productImage.push(imagePath)
-                }
-            }else if(req.files && req.files[`image${i}`]){
-                const file = req.files[`image${i}`][0]
-                const filename = Date.now() + '-' + file.originalname.replace(/\s/g, "") + ".webp"
-                const filepath = path.join(__dirname, "../../public/images", filename)
+        //         if(product.productImage[i-1]){
+        //             product.productImage[i-1] = imagePath
+        //         }else {
+        //             product.productImage.push(imagePath)
+        //         }
+        //     }else if(req.files && req.files[`image${i}`]){
+        //         const file = req.files[`image${i}`][0]
+        //         const filename = Date.now() + '-' + file.originalname.replace(/\s/g, "") + ".webp"
+        //         const filepath = path.join(__dirname, "../../public/images", filename)
 
 
-                await sharp(file.buffer)
-                      .resize(800, 800, {fit: "inside", withoutEnlargement: true})
-                      .webp({quality: 80})
-                      .toFile(filepath)
+        //         await sharp(file.buffer)
+        //               .resize(800, 800, {fit: "inside", withoutEnlargement: true})
+        //               .webp({quality: 80})
+        //               .toFile(filepath)
 
-                const imagePath = `images/${filename}`
+        //         const imagePath = `images/${filename}`
 
-                if(product.productImage[i-1]){
-                    product.productImage[i-1] = imagePath
-                }else {
-                    product.productImage.push(imagePath)
-                }
+        //         if(product.productImage[i-1]){
+        //             product.productImage[i-1] = imagePath
+        //         }else {
+        //             product.productImage.push(imagePath)
+        //         }
+        //     }
+        // }
+
+        // for(let i=1; i<= 5; i++){
+        //     const cloudinaryFile = req.files?.[`croppedImage${i}`]?.[0]
+
+        //     if(cloudinaryFile){
+        //         const imageUrl = cloudinaryFile.path
+
+        //         if(product.productImage[i-1]){
+        //             product.productImage[i-1] = imageUrl
+        //         }else{
+        //             product.productImage.push(imageUrl)
+        //         }
+        //     }
+        // }
+
+        // console.log(" req.files:", req.files);
+        // const uploadedImages = Object.keys(req.files || {})
+        //       .filter(key => key.startsWith('croppedImage'))
+        //       .map(key => req.files[key][0].path)
+
+        //       console.log(" Uploaded image URLs:", uploadedImages);
+        // uploadedImages.forEach(imageUrl => {
+        //     product.productImage.push(imageUrl)
+        // })
+
+
+//         const uploadedImages = [];
+
+// for (let i = 1; i <= 5; i++) {
+//   const key = `image${i}`;
+//   if (req.files?.[key]?.[0]?.path) {
+//     uploadedImages.push(req.files[key][0].path);
+//   }
+// }
+
+// console.log(" Uploaded image URLs:", uploadedImages);
+
+// // Add to product
+// product.productImage.push(...uploadedImages);
+
+
+        const uploadedImages = [...product.productImage]; // Clone current images
+
+        for (let i = 1; i <= 5; i++) {
+            const base64 = req.body[`croppedImage${i}`];
+            const file = req.files?.[`image${i}`]?.[0];
+
+            if (base64 && base64.startsWith('data:image')) {
+                const base64Data = base64.replace(/^data:image\/\w+;base64,/, '');
+                const imageBuffer = Buffer.from(base64Data, 'base64');
+
+                const dataUri = `data:image/webp;base64,${imageBuffer.toString('base64')}`;
+                const cloudinaryRes = await cloudinary.uploader.upload(dataUri, {
+                    folder: 'yara-images',
+                    format: 'webp'
+                });
+
+                uploadedImages[i - 1] = cloudinaryRes.secure_url; // Replace at index
+            } else if (file?.path) {
+                uploadedImages[i - 1] = file.path; // Already uploaded to Cloudinary via multer-storage-cloudinary
             }
         }
+
+        // Final cleanup and save
+        product.productImage = uploadedImages.filter(Boolean); // Remove undefined/null if any
+
+
 
         Object.assign(product, updatedProduct)
 
@@ -309,7 +399,7 @@ for (let variant of submittedVariants) {
             productId: productId,
             sku: variant.sku,
             size: variant.size,
-            salePrice: variant.price,
+            // salePrice: variant.price,
             stockQuantity: variant.stock
         });
     } else {
@@ -322,14 +412,14 @@ for (let variant of submittedVariants) {
         if (
             existing.sku !== variant.sku ||
             existing.size !== variant.size ||
-            existing.salePrice !== parseFloat(variant.price) ||
+            // existing.salePrice !== parseFloat(variant.price) ||
             existing.stockQuantity !== parseInt(variant.stock)
         ) {
             toUpdate.push({
                 _id: variant._id,
                 sku: variant.sku,
                 size: variant.size,
-                salePrice: variant.price,
+                // salePrice: variant.price,
                 stockQuantity: variant.stock
             });
         }
@@ -361,25 +451,47 @@ if (toDelete.length > 0) {
     }
 }
 
+
+//function to extract cloudinary public id
+function extractCloudinaryPublicId(url) {
+    try {
+        const parts = url.split('/');
+        const publicIdWithFolder = parts.slice(parts.indexOf('upload') + 1).join('/');
+        return publicIdWithFolder.replace(/\.(jpg|jpeg|png|webp|gif|bmp|tiff|ico|svg)$/, '');
+    } catch (err) {
+        console.error("Failed to extract publicId from URL", err);
+        return null;
+    }
+}
 //delete single image
 const deleteSingleImage = async (req, res) => {
     try {
-        const { imageNameToServer, productIdToServer, imageIndex } = req.body;
+        const { imageUrl, productIdToServer, imageIndex } = req.body;
         const product = await Product.findById(productIdToServer)
 
         if(!product){
             return res.status(400).json({success: true, message: 'Product not found!'})
         }
+
         product.productImage.splice(imageIndex, 1)
         await product.save()
 
-        const imagePath = path.join(__dirname, '../../public', imageNameToServer)
+        // const imagePath = path.join(__dirname, '../../public', imageNameToServer)
 
-        if(fs.existsSync(imagePath)){
-            fs.unlinkSync(imagePath)
-            console.log(`Image ${imageNameToServer} deleted successfully`)
+        // if(fs.existsSync(imagePath)){
+        //     fs.unlinkSync(imagePath)
+        //     console.log(`Image ${imageNameToServer} deleted successfully`)
+        // }else{
+        //     console.log(`Image ${imageNameToServer}  not found`)
+        // }
+
+        const publicId = extractCloudinaryPublicId(imageUrl)
+        if(publicId){
+            const result = await cloudinary.uploader.destroy(publicId)
+            console.log(result);
+            console.log(`cloudinary image ${publicId} deleted successfully`)
         }else{
-            console.log(`Image ${imageNameToServer}  not found`)
+            console.log(`could not extract public_id from url: ${imageUrl}`)
         }
         res.json({status: true, message: 'Image deleted successfully'})
 

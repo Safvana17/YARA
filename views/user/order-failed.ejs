@@ -1,0 +1,29 @@
+<%- include("../../views/partials/user/navbar") %>
+
+<div class="container text-center my-5 min-vh-100">
+
+    <!-- Lottie Animation -->
+    <div id="failure-animation" style="height: auto; width: 100%; max-width: 300px; margin: 0 auto;"></div>
+
+    <h1 class="text-danger">Oops!</h1>
+    <h3 class="text-dark mt-4">Cannot Place Your Order!!!</h3>
+    <p class="lead text-muted mb-4">Your payment was not successful or got interrupted. Please try again.</p>
+   
+    <div class="mt-4">
+        <a href="/checkout" class="btn btn-outline-danger me-2 btn-lg px-5 py-3 fw-bold">Retry</a>
+        <!-- <a href="/shop" class="btn btn-outline-secondary">Continue Shopping</a> -->
+    </div>
+</div>
+
+<script src="https://unpkg.com/lottie-web@5.7.4/build/player/lottie.min.js"></script>
+<script>
+    lottie.loadAnimation({
+        container: document.getElementById('failure-animation'),
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: '/images/Error animation.json' // your animation file path
+    });
+</script>
+
+<%- include("../../views/partials/user/footer") %>

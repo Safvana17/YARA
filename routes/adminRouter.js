@@ -5,6 +5,7 @@ const categoryController = require('../controller/admin/categoryController')
 const brandController = require('../controller/admin/brandController')
 const productController = require('../controller/admin/productController')
 const orderController = require('../controller/admin/orderController')
+const couponController = require('../controller/admin/couponController')
 const {adminAuth, userAuth} = require('../middleware/auth')
 const upload = require('../middleware/multerConfig')
 const router = express.Router()
@@ -71,6 +72,24 @@ router.post('/update-order-status/:id', adminAuth, orderController.updateOrderSt
 router.get('/download-invoice/:id', adminAuth, orderController.getInvoice)
 router.post('/approve-return/:id', adminAuth, orderController.approveReturnRequest)
 router.post('/cancel-return/:id', adminAuth, orderController.cancelReturnRequest)
+router.post('/approve-item-return/:orderId/:itemId', (req, res, next) => {
+  console.log("Route middleware hit");
+  next();
+}, adminAuth, orderController.approveItemReturnRequest);
+
+router.post('/cancel-item-return/:orderId/:itemId', adminAuth, orderController.cancelItemReturnRequest)
+
+//coupon management
+router.get('/coupons', adminAuth, couponController.loadCouponPage)
+router.get('/coupons/add', adminAuth, couponController.loadAddCouponPage)
+router.post('/coupons/add', adminAuth, couponController.addCoupon)
+router.get('/coupons/edit/:id', adminAuth, couponController.getEditPage)
+router.post('/coupons/edit/:id', adminAuth, couponController.editCoupon)
+router.delete('/coupons/delete/:id', adminAuth, couponController.deleteCoupon)
+
+//sales report
+router.get('/report', adminAuth, adminController.getReport)
+router.get('/report/generate', adminAuth, adminController.getReport)
 
 //refer and earn
 router.get('/referrals', adminAuth, adminController.loadReferralPage)
