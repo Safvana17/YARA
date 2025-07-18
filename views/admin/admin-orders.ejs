@@ -30,7 +30,7 @@
       <% } %>
       <% orders.forEach((item, index)=> { %>
       <tr>
-        <td><%= (currentPage - 1 ) * 3 + index + 1 %></td>
+        <td><%= (currentPage - 1 ) * 7 + index + 1 %></td>
         <td>#<%= item._id.toString().slice(-6) %></td>
         <td><%= item.userId.name || item.userId.email %></td>
         <td><%= item.createdAt.toDateString()  %></td>

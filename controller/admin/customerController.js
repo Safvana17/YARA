@@ -1,4 +1,6 @@
+const Address = require('../../models/addressSchema')
 const User = require('../../models/userSchema')
+const Order = require('../../models/orderSchema')
 //customer page
 const loadCustomers = async (req, res) => {
     try {
@@ -75,7 +77,9 @@ const customerInfo = async (req, res) => {
     try {
         const id = req.params.id
         const user = await User.findById(id)
-        res.render('customerinfo',{user})
+        const addresses = await Address.find({userId: id}).lean()
+        const orders = await Order.find({user: id}).populate('orderItems.product').sort({createdAt: -1}).lean()
+        res.render('customerinfo',{user, addresses, orders})
     } catch (error) {
         console.error('Error while viewing user info', error)
         res.redirect('/admin/pageerror')

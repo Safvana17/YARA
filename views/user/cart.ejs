@@ -1,9 +1,11 @@
-<%- include("../../views/partials/user/navbar") %>
+
+
+<%- include("../../views/partials/user/navbar", {user: user}) %>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <div class="container my-5 min-vh-100">
   <h3 class="mb-4 text-center">Shopping Cart</h3>
-<p>Debug: User = <%= user ? user.name : "No user" %></p>
+
 
   <% if (cartItems.length === 0) { %>
     <div class="text-center">

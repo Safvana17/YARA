@@ -2,6 +2,7 @@ const Cart = require('../../models/cartSchema')
 const Product = require('../../models/productSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const User = require('../../models/userSchema')
+const mongoose = require('mongoose')
 
 
 const getCartPage = async (req, res) => {
@@ -21,10 +22,12 @@ const getCartPage = async (req, res) => {
                         path: 'items.variantId',
                     }]
                 })
-        
+
+                console.log("username2:",user.name)
         const cartDoc = user.cart[0]
         if(!cartDoc || cartDoc.items.length === 0){
             return res.render('cart', {
+                user,
                 cartItems: [],
                 grandTotal: 0,
                 message: "There is nothing in your cart. Let's add some items."
@@ -64,6 +67,8 @@ const getCartPage = async (req, res) => {
 
        req.session.cartTotal = grandTotal
 
+
+       console.log("username1:",user.name)
        res.render('cart', {
         user,
         cartItems: validCartItems,

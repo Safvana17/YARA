@@ -16,6 +16,9 @@
   .container {
     flex-grow: 1;
   }
+  .error-message{
+    color: red;
+  }
 </style>
 
 <div class="container mt-5">
@@ -26,11 +29,13 @@
     <form id="addBrandForm" enctype="multipart/form-data" class="row g-3">
       <div class="col-md-4">
         <label for="brandName" class="form-label">Brand Name</label>
-        <input type="text" class="form-control" name="brandName" id="brandName" required>
+        <input type="text" class="form-control" name="brandName" id="brandName">
+        <p class="error-message" id="error1"></p>
       </div>
       <div class="col-md-4">
         <label for="brandLogo" class="form-label">Logo</label>
-        <input type="file" class="form-control" name="brandImage" id="brandImage" accept="image/*" required>
+        <input type="file" class="form-control" name="brandImage" id="brandImage" accept="image/*">
+        <p class="error-message" id="error2"></p>
       </div>
       <div class="col-12">
         <button type="submit" class="btn btn-primary">Add Brand</button>
@@ -102,17 +107,28 @@
         try {
             const name = document.getElementById('brandName').value.trim()
             const brandLogo = document.getElementById('brandImage').value
+            const error1 = document.getElementById('error1')
+            const error2 = document.getElementById('error2')
+            error1.innerText = ''
+            error2.innerText = ''
+            let isValid = true
 
-            if(!name || !brandLogo ){
-                event.preventDefault()
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Missing Field',
-                    text: 'Pease fill in required fields'
-                })
-                return
+            if(!name){
+                error1.innerText = 'Please enter brand name'
+                isValid = false
+            }
+            if(!/^[a-zA-Z\s]+$/.test(name)){
+              error1.innerText = 'Brand name must be alpahabetic characters'
+              isValid = false
+            }
+            if(!brandLogo){
+              error2.innerText = 'please add brand logo'
+              isValid = false
             }
 
+            if(!isValid){
+              return
+            }
             const response = await fetch('/admin/brand/add',{
                 method: 'POST',
                 body: formData

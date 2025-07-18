@@ -1,4 +1,9 @@
 <%- include('../../views/partials/user/navbar') %>
+<!-- Swiper CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+
    <style>
       .btn {
       display: inline-block;
@@ -190,6 +195,37 @@
   font-weight: 600;
 }
 
+.swiper-slide {
+  display: flex;
+  justify-content: center;
+  height: auto;
+}
+/* Positioning and appearance */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #fff;
+  background-color: rgba(0, 0, 0, 0.5); /* semi-transparent black */
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  top: 40%;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Icon centering */
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Hover effect */
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background-color: #24ddda; /* your theme red-maroon or custom color */
+  color: #fff;
+}
 
  @media (max-width: 768px) {
     .product-img img {
@@ -244,14 +280,16 @@
       </div>
     </div>
   </section>
+
 <section class="product spad">
   <div class="container">
     <div class="section-title text-center">
-      <h2>Latest Products</h2>
+      <h2>Trending Products</h2>
     </div>
-    <div class="row">
-      <% latestproducts.forEach(product => { %>
-        <div class="col-lg-3 col-md-4 col-12 col-sm-6">
+    <div class="swiper trendingSwiper">
+      <div class="swiper-wrapper">
+      <% trendingProducts.forEach(product => { %>
+        <div class="swiper-slide">
           <div class="product-cart-wrap mb-30">
             <div class="product-img-action-wrap">
               <div class="product-img product-img-zoom">
@@ -268,8 +306,57 @@
         </div>
       <% }) %>
     </div>
+    <!-- add arrows -->
+     <div class="swiper-button-next"></div>
+     <div class="swiper-button-prev"></div>
+    </div>
   </div>
 </section>
+
+<section class="py-5 text-white my-3" style="background: url('/images/yara.jpg') no-repeat center center/cover;">
+  <div class="container text-center py-5 bg-dark bg-opacity-50 rounded">
+    <h1 class="display-5 fw-bold mb-3">Introducing the Yara Collection</h1>
+    <p class="lead mb-4">
+      Yara isn't just a collection — it's a story of grace, tradition, and bold individuality.
+      Inspired by the timeless charm of ethnic wear and crafted for modern women, Yara brings together elegance and comfort in every stitch.
+    </p>
+    <h4 class="text-warning mb-4">✨ ₹50 Wallet Cashback</span> for every friend you refer! ✨</h4>
+    <a href="/shop" class="btn btn-light btn-lg shadow">Explore Yara</a>
+  </div>
+</section>
+<section class="product spad">
+  <div class="container">
+    <div class="section-title text-center">
+      <h2>Latest Products</h2>
+    </div>
+    <div class="swiper trendingSwiper">
+      <div class="swiper-wrapper">
+      <% latestproducts.forEach(product => { %>
+        <div class="swiper-slide">
+          <div class="product-cart-wrap mb-30">
+            <div class="product-img-action-wrap">
+              <div class="product-img product-img-zoom">
+                <a href="/productDetails?id=<%= product._id %>">
+                  <img class="default-img" src="<%= product.productImage[0] %>" alt="<%= product.name %>">
+                </a>
+              </div>
+            </div>
+            <div class="product-content-wrap">
+              <h6><%= product.name %></h6>
+              <h5>₹<%= product.salePrice %></h5>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+    <!-- add arrows -->
+     <div class="swiper-button-next"></div>
+     <div class="swiper-button-prev"></div>
+    </div>
+  </div>
+</section>
+
+
 <section class="brand-section mt-4">
 <div class="container">
   <div class="row">
@@ -320,9 +407,40 @@
   </div>
 </section>
 
+<section class="py-5 text-center text-white" style="background: url('/images/kurta.jpg') no-repeat center center/cover;">
+  <div class="container bg-dark bg-opacity-50 p-5 rounded shadow">
+    <h2 class="display-5 fw-bold mb-3">Since 2020 — The Yara Way</h2>
+    <p class="lead mx-auto" style="max-width: 700px;">
+      At <strong>Yara</strong>, we believe fashion is more than just clothing — it's a story stitched into every thread. 
+      Since our humble beginnings in 2020, we've been reimagining traditional Indian wear for the modern woman. 
+      Every kurti, every design speaks of grace, strength, and timeless beauty.
+    </p>
+    <a href="/shop?category=kurti" class="btn btn-outline-light mt-4 px-4 py-2">Explore Kurtis</a>
+  </div>
+</section>
+
+
 <%- include('../../views/partials/user/footer') %>
   <!-- Bootstrap Bundle JS (includes Popper) -->
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+<script>
+  const swiper = new Swiper('.trendingSwiper', {
+    slidesPerView: 4,
+    spaceBetween: 30,
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+    breakpoints: {
+      320: { slidesPerView: 1 },
+      576: { slidesPerView: 2 },
+      768: { slidesPerView: 3 },
+      1024: { slidesPerView: 4 }
+    }
+  });
+</script>
 
 
 </body>

@@ -2,6 +2,7 @@ const User = require('../../models/userSchema')
 const Category = require('../../models/categorySchema')
 const Product = require('../../models/productSchema')
 const Brand = require('../../models/brandSchema')
+const Order = require('../../models/orderSchema')
 const bcrypt = require('bcrypt')
 const nodemailer = require('nodemailer')
 const env = require('dotenv')
@@ -162,7 +163,7 @@ const verifyOtp = async (req, res) => {
             await referrer.save()
             }
            req.session.user = newUser._id
-           res.status(200).json({success: true, redirectUrl: "/"})
+           res.status(200).json({success: true, redirectUrl: "/login"})
         }else{
             res.status(500).json({success:false, message: "Invalid OTP, Please try again later"})
         }
@@ -202,24 +203,55 @@ const loadHome = async (req, res) => {
 
         const categories = await Category.find({isListed: true})
         const brands = await Brand.find({isBlocked: false})
+        const trendingProducts = await Order.aggregate([
+            {$unwind: '$orderItems'},
+            {
+                $group: {
+                    _id: '$orderItems.product',
+                    totalQty: {$sum: '$orderItems.quantity'}
+                }
+            },
+            {$sort: {totalQty: -1 } },
+            {$limit: 8},
+            {
+                $lookup: {
+                    from: 'products',
+                    foreignField: "_id",
+                    localField: "_id",
+                    as: 'product'
+                }
+            },
+            {$unwind: '$product'},
+            {
+                $project: {
+                    _id: '$product._id',
+                    name: '$product.name',
+                    productImage: '$product.productImage',
+                    salePrice: '$product.salePrice',
+                    totalQty: 1
+                }
+            }
+        ])
         const latestProduct = await Product.find({
             isBlocked: false,
             category: {$in: categories.map(c => c._id)}
         })
         .sort({ createdAt: -1})
-        .limit(12)
+        .limit(8)
         if(userId){
             const userData = await User.findOne({_id: userId})
             if(!userData.isBlocked){
                   res.render('home',{
                      user: userData,
                      latestproducts: latestProduct,
+                     trendingProducts,
                     brands
                   })
             }else{
                 res.render('home', {
                     user: null,
-                    latestProducts: latestProduct,
+                    latestproducts: latestProduct,
+                    trendingProducts,
                     brands
                 })
             }
@@ -227,6 +259,7 @@ const loadHome = async (req, res) => {
             res.render('home',{
                 user: null,
                 latestproducts: latestProduct,
+                trendingProducts,
                 brands
             })
         }
@@ -321,12 +354,14 @@ const loadShoppingPage = async (req, res) => {
         }
         if(category) filter.category = category
         if (brand) {
-              const brandDoc = await Brand.findOne({ brandName: brand });
+              const brandDoc = await Brand.findOne({ brandName: brand, isBlocked: false});
               if (brandDoc) {
                 filter.brand = brandDoc._id;
               } else {
-                 filter.brand = {$in: brands.map((b => b._id))}
+                 filter.brand = null
               }
+         }else{
+            filter.brand = {$in: brands.map((b => b._id))}
          }
 
         if(gt && lt) filter.salePrice = {$gte: parseInt(gt), $lt: parseInt(lt)}

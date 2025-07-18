@@ -12,6 +12,9 @@
         z-index: 1;
         margin-bottom: 2rem;
     }
+    .error-message {
+        color: red;
+    }
 </style>
 <div class="container mt-1 mb-5">
     <h1>Category</h1>
@@ -169,7 +172,7 @@
 
         isValid = true
         if(name === ''){
-            displayErrorMessage('error-1', 'Please enter a name')
+            displayErrorMessage('error1', 'Please enter a name')
             isValid = false
         }else if(!/^[a-zA-Z\s]+$/.test(name)){
             displayErrorMessage('error1', 'Category name should contain only alphabetic characters.')

@@ -1,12 +1,35 @@
 <%- include('../../views/partials/admin/header') %>
-<style>
-    container {
-       flex-grow: 1;
-    }
-</style>
-<div class="container">
-    <p><%= user.name %></p>
-</div>
+<h3>User Details</h3>
+<p><strong>Name:</strong> <%= user.name %></p>
+<p><strong>Email:</strong> <%= user.email %></p>
+<p><strong>Phone:</strong> <%= user.phone %></p>
+<p><strong>Status:</strong> <%= user.isBlocked ? 'Blocked' : 'Active' %></p>
+
+<h4>Addresses</h4>
+<ul>
+  <% addresses.forEach(addr => { %>
+    <li><%= addr.addressLine %>, <%= addr.city %>, <%= addr.state %>, <%= addr.zip %></li>
+  <% }) %>
+</ul>
+
+<h4>Orders</h4>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Order ID</th><th>Date</th><th>Status</th><th>Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% orders.forEach(order => { %>
+      <tr>
+        <td><%= order._id %></td>
+        <td><%= order.createdAt.toDateString() %></td>
+        <td><%= order.status %></td>
+        <td>₹<%= order.finalAmount %></td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
 
 
 <%- include('../../views/partials/admin/footer') %>

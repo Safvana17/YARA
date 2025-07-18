@@ -32,6 +32,16 @@ const createRazorpayOrder = async (req, res) => {
     }
 }
 
+//checking status
+function calculateOrderStatus(statuses) {
+  if (statuses.every(s => s === 'Cancelled')) return 'Cancelled';
+  if (statuses.every(s => s === 'Delivered')) return 'Delivered';
+  if (statuses.includes('Cancelled') && !statuses.every(s => s === 'Cancelled')) return 'Partially Cancelled';
+  if (statuses.includes('Returned')) return 'Partially Returned';
+  return 'Processing';
+}
+
+
 //verify payment
 const verifyPayment = async (req, res) => {
     try {
@@ -62,6 +72,7 @@ const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user 
         const {selectedAddress, payment} = req.body
+        const user = await User.findById(userId)
 
         console.log('REQ.BODY:', req.body)
 
@@ -175,6 +186,7 @@ const placeOrder = async (req, res) => {
         //create order
         const newOrder = new Order({
             userId,
+            user,
             address: address.toObject(),
             orderItems: orderItems,
             payment,
@@ -557,6 +569,10 @@ const deleteItemOrder = async (req, res) => {
 
             await user.save()
         }
+
+        // Recalculate overall orderStatus
+        order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
+        await order.save();
 
         res.status(200).json({success: true, message: 'Order cancelled'})
     } catch (error) {

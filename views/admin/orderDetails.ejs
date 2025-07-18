@@ -9,7 +9,7 @@
     <p><strong>Date:</strong> <%= order.createdAt.toDateString() %></p>
     <p><strong>Status:</strong> <%= order.status %></p>
     <% if(order.status === 'Cancelled' || order.status === 'Return Request') { %>
-      <p><strong>Reason:</strong><%= order.cancelReason %></p>
+      <p><strong>Reason:</strong><%= order.cancelReason || order.orderItems.itemCancelReason %></p>
     <% } %>
     <div class="d-flex align-item-center gap=2 mb-3">
     <% if(order.status !== 'Cancelled' || order.status !== 'Returned') { %>

@@ -3,24 +3,60 @@ const ExcelJS = require('exceljs')
 
 
 function generatePDF(res, salesData, totalSale, totalAmount, totalDiscount, totalOffer){
-    const doc = new PDFDocument()
+    const doc = new PDFDocument({ margin: 40, size: 'A4'})
+
     res.setHeader('content-type', 'application/pdf')
     res.setHeader('conten-disposition', 'attachement; filename="sales_report.pdf"')
 
     doc.pipe(res)
-    doc.fontSize(18).text('Sales Report', {align: 'center'}).moveDown()
+    doc.fontSize(22).fillColor('#333366').text('YARA Sales Report', {align: 'center'}).moveDown(2)
 
+    let y = doc.y
+    doc
+      .fontSize(12)
+      .fillColor('#000')
+      .text('SL', 50, y)
+      .text('Order ID', 90, y)
+      .text('User', 200, y)
+      .text('Date', 280, y)
+      .text('Amount', 370, y)
+      .text('Dicount', 440, y)
+      .text('Offer', 510, y)
+      .moveDown(0.5)
+
+      y += 20
+    doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke()
+
+
+    y += 10
     salesData.forEach((item, i) =>{
-        doc.fontSize(12).text(
-            `${i + 1}. Order ID: ${item.orderId}, user: ${item.user}, Date: ${item.date}, Amount: ₹${item.totalAmount}, Discount: ₹${item.discount}, Offer: ₹${item.offer}`
-        )
+        doc
+          .fontSize(10)
+          .fillColor('#000')
+          .text(`${i + 1}`, 50, y)
+          .text(`${item.orderId.slice(0, 6)}`, 90, y)
+          .text(`${item.user}`, 200, y)
+          .text(`${item.date}`, 280, y)
+          .text(`${item.totalAmount}`, 370, y)
+          .text(`${item.discount}`, 440, y)
+          .text(`${item.offer}`, 510, y)
+          .moveDown(0.5)
+     y += 20
+     if(y > 750){
+        doc.addPage()
+        y = 50
+     }
     })
 
-    doc.moveDown()
-    doc.text(`Total Orders: ${totalSale}`)
-    doc.text(`Total Amount: ₹${totalAmount}`)
-    doc.text(`Total Discount: ₹${totalDiscount}`)
-    doc.text(`Total Offer: ₹${totalOffer}`)
+    y += 30
+    doc.moveDown(1)
+    doc
+        .fontSize(12)
+        .fillColor('#000')
+        .text(`Total Orders: ${totalSale}`, 50, y)
+        .text(`Total Amount: ₹${totalAmount}`, 50, y+20)
+        .text(`Total Discount: ₹${totalDiscount}`, 50, y+40)
+        .text(`Total Offer: ₹${totalOffer}`,50, y+60)
     doc.end()
 }
 
@@ -29,18 +65,32 @@ async function generateExcel(res, salesData, totalSale, totalAmount, totalDiscou
     const worksheet = workbook.addWorksheet('Sales Report')
 
     worksheet.columns = [
-        {header: 'Order Id', key: 'orderId', width: 20},
-        {header: 'User', key: 'user', width: 20},
-        {header: 'Date', key: 'date', width: 15},
-        {header: 'Amount', key: 'totalAmount', width: 15},
-        {header: 'Discount', key: 'discount', width: 15},
-        {header: 'Offer', key: 'offer', width: 15},
-        {header: 'Payment', key: 'payment', width: 15},
+        { header: 'SL', key: 'sl', width: 6 },
+        { header: 'Order ID', key: 'orderId', width: 20 },
+        { header: 'User', key: 'user', width: 25 },
+        { header: 'Date', key: 'date', width: 20 },
+        { header: 'Amount', key: 'totalAmount', width: 15 },
+        { header: 'Discount', key: 'discount', width: 15 },
+        { header: 'Offer', key: 'offer', width: 15 },
+        { header: 'Payment', key: 'payment', width: 15 },
     ]
 
-    salesData.forEach(row => worksheet.addRow(row))
+    // Add rows
+    salesData.forEach((row, i) => {
+        worksheet.addRow({ sl: i + 1, ...row })
+    })
 
-    worksheet.addRow([])
+    // Styling header
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF333366' },
+    }
+    worksheet.getRow(1).alignment = { horizontal: 'center' }
+
+    worksheet.addRow([]) // empty row
+
     worksheet.addRow({
         user: 'TOTALS:',
         totalAmount,
@@ -48,13 +98,26 @@ async function generateExcel(res, salesData, totalSale, totalAmount, totalDiscou
         offer: totalOffer
     })
 
-    res.setHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    res.setHeader('content-disposition', 'attachment; filename="sales_report.xlsx"')
+    const lastRow = worksheet.lastRow
+    lastRow.font = { bold: true }
+    lastRow.eachCell((cell) => {
+        cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' },
+        }
+    })
+
+    res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    res.setHeader('Content-Disposition', 'attachment; filename="sales_report.xlsx"')
 
     await workbook.xlsx.write(res)
-    res.send()
-
+    res.end()
 }
+
 
 
 module.exports = {

@@ -1,4 +1,9 @@
 <%- include("../../views/partials/admin/header") %>
+<style>
+    .error-message {
+        color: red;
+    }
+</style>
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6 mt-60">
@@ -8,11 +13,13 @@
                 <div class="mb-4 mt-30">
                     <label for="name" class="form-label">Name</label>
                     <input type="text" id="name" name="name" value="<%=category.name%>" class="form-control border" />
+                    <p class="error-message" id="error1"></p>
                 </div>
                 
                 <div class="mb-4">
                     <label for="description" class="form-label">Description</label>
                     <textarea id="description" name="description" class="form-control border"><%=category.description%></textarea>
+                    <p class="error-message" id="error2"></p>
                 </div>
                 <% if (error) { %>
                     <div class="alert alert-danger"><%=error%></div>
@@ -36,6 +43,27 @@
         const id = '<%= category._id %>'
         const name = document.getElementById('name').value.trim()
         const description = document.getElementById('description').value.trim()
+        const error1 = document.getElementById('error1')
+        const error2 = document.getElementById('error2')
+        error1.textContent = ''
+        error2.textContent = ''
+        const isValid = true
+        if(!name){
+            error1.textContent = 'Please enter category name'
+            isValid = false
+        }
+        if(!/^[a-zA-Z\s]+$/.test(name)){
+            error1.textContent = 'Category name should contain only alphabetic characters'
+            isValid = false
+        }
+        if(!description){
+           error2.innerText = 'Please enter description'
+           isValid = false
+        }
+        if(!isValid){
+            return
+        }
+
 
         try {
             const response = await fetch(`/admin/category/edit/${id}`,{

@@ -142,7 +142,7 @@
      <div class="row">
       <div class="col-md-4 mb-3">
             <label for="cat" class="form-label">Category</label>
-            <select name="categoryId" id="cat" class="form-select" required>
+            <select name="categoryId" id="cat" class="form-select" >
                 <option value="" disabled selected></option>
                 <% category.forEach(c => { %>
                     <option value="<%= c._id %>"><%= c.name %></option>
@@ -152,7 +152,7 @@
         </div>       
         <div class="col-md-4 mb-3" id="brand-container">
             <label for="brand" class="form-label">Brand</label>
-            <select name="brand" id="brand" class="form-select" required>
+            <select name="brand" id="brand" class="form-select" >
                 <option value="" disabled selected>Select Brand</option>
                 <% brand.forEach(b => { %>
                     <option value="<%= b._id %>"><%= b.brandName %></option>
@@ -370,52 +370,97 @@ function previewImage(event, index){
 
       //validation
       let isValid = true
+        const name = document.getElementById('name').value.trim()
+        const nameError = document.getElementById('name-error')
+        nameError.textContent = ''
+        if(!name || name.length < 4){
+            nameError.textContent = 'Product name is require (must be atleast 4 characters)'
+            isValid = false
+        }
+        if(!/^[a-zA-Z\s]+$/.test(name)){
+            nameError.textContent = 'Name can include only alphabetic characters'
+            isValid = false
+        }
 
         const description = document.getElementById('description').value.trim()
+        const descriptionError = document.getElementById(`description-error`)
+        descriptionError.textContent = ''
         if(!description){
-            const errorE1 = document.getElementById(`description-error`)
-            if(errorE1) errorE1.textContent = 'Description is required'            
+            descriptionError.textContent = 'Description is required'
+            isValid = false           
         }
+
+        const category = document.getElementById('cat').value
+        const catError = document.getElementById('categoryId-error')
+        catError.textContent = ''
+        if(!category){
+            catError.textContent = 'Select a category'
+            isValid = false
+        }
+
+        const brand = document.getElementById('brand').value
+        const brandError = document.getElementById('brand-error')
+        brandError.textContent = ''
+        if(!brand){
+            brandError.textContent = 'Please select a brand'
+            isValid = false
+        }
+
+        const color = document.getElementById('color').value
+        const colorError = document.getElementById('color-error')
+        colorError.textContent = ''
+        if(!color){
+            colorError.textContent = 'Please enter a color'
+            isValid = false
+        }
+        if(!/^[a-zA-Z\s]+$/.test(color)){
+            colorError.textContent = 'Only letters are allowed'
+            isValid = false
+        }
+
+
 
       const regularprice = parseFloat(document.getElementById('regularprice').value)
       const saleprice = parseFloat(document.getElementById('saleprice').value)
       //const productVriantsalePrice = parseFloat(document.getElementById('salePricevariant').value)
+      const regError = document.getElementById('regularprice-error')
+      const saleError = document.getElementById('saleprice-error')
 
       if(isNaN(regularprice) || regularprice <= 0) {
         isValid = false
-        Swal.fire({
-            icon: 'error',
-            title: 'Invalid Regular price',
-            text: 'Regular price must be greater than zero',
-            confirmButtonText: 'OK'
-        })
-        document.getElementById('regularprice-error').textContent = 'Regular price must be greater than zero'
-        return
+        // Swal.fire({
+        //     icon: 'error',
+        //     title: 'Invalid Regular price',
+        //     text: 'Regular price must be greater than zero',
+        //     confirmButtonText: 'OK'
+        // })
+        regError.textContent = 'Regular price must be greater than zero'
+        
       }
 
       if(isNaN(saleprice) || saleprice <= 0) {
         isValid = false
-        Swal.fire({
-            icon: 'error',
-            title: 'Invalid sale price',
-            text: 'Sale price must be greater than zero',
-            confirmButtonText: 'OK'
-        })
-        document.getElementById('saleprice-error').textContent = 'Sale price must be greater than zero'
-        return
+        // Swal.fire({
+        //     icon: 'error',
+        //     title: 'Invalid sale price',
+        //     text: 'Sale price must be greater than zero',
+        //     confirmButtonText: 'OK'
+        // })
+        saleError.textContent = 'Sale price must be greater than zero'
+        
       }  
       
 
       if(saleprice > regularprice) {
         isValid = false
-        Swal.fire({
-            icon: 'error',
-            title: 'Invalid price',
-            text: 'Regular price must be greater than sale price',
-            confirmButtonText: 'OK'
-        })
-        document.getElementById('saleprice-error').textContent = 'Sale price cannot be higher than regular price'
-        return
+        // Swal.fire({
+        //     icon: 'error',
+        //     title: 'Invalid price',
+        //     text: 'Regular price must be greater than sale price',
+        //     confirmButtonText: 'OK'
+        // })
+        saleError.textContent = 'Sale price cannot be higher than regular price'
+        
       }
 
      document.querySelectorAll('.variant').forEach((variantE1, index)=>{
@@ -423,6 +468,10 @@ function previewImage(event, index){
         const size = variantE1.querySelector('.variant-size')
         // const price = variantE1.querySelector('.variant-price')
         const stock = variantE1.querySelector('.variant-stock')
+        
+        variantE1.querySelector('.sku-error').textContent = ''
+        variantE1.querySelector('.size-error').textContent = ''
+        variantE1.querySelector('.stock-error').textContent = ''
 
         if(!sku.value.trim()){
             isValid = false
@@ -444,6 +493,7 @@ function previewImage(event, index){
             variantE1.querySelector('.stock-error').textContent = 'Stock is required'
         }
      })
+
      const allImagesProcessed = imageStatus.every(status => status === true)
      let imageUploadedCount = 0
      for(let i=1; i<=5; i++){
@@ -503,6 +553,7 @@ function previewImage(event, index){
 
     })
 
+    //real time validation
     document.getElementById('regularprice').addEventListener('input', function() {
         const regularPrice = parseFloat(this.value);
         //const salePrice = parseFloat(document.getElementById('saleprice').value);
@@ -514,6 +565,7 @@ function previewImage(event, index){
         }
 
         // Check sale price relationship
+        const salePrice = parseFloat(document.getElementById('salePrice').value)
         if (!isNaN(salePrice) && salePrice > regularPrice) {
             document.getElementById('salePrice-error').textContent = 'Sale price cannot be higher than regular price';
         } else {

@@ -11,7 +11,7 @@
     };
     return Object.entries({ ...currentParams, ...newParams })
       .filter(([key, value]) => value !== null && value !== undefined && value !== '')
-      .map(([key, value]) => `${key}=${value}`)
+      .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
       .join('&');
   }
 %>
@@ -139,10 +139,14 @@
    gap: 20px;
    flex: 1;
    align-items: stretch;
+   /* justify-content: center; */
  }
 
 
  .product-card {
+  min-width: 200px;
+  max-width: 300px;
+  flex: 1 1 calc(33.33% - 20px);
    width: calc(33.333% - 20px);
    border: 1px solid #ddd;
    padding: 15px;
@@ -153,6 +157,13 @@
    flex-direction: column;
    justify-content: space-between;
  }
+.product-card h5 {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  font-size: 16px;
+  line-height: 1.2;
+  margin-top: 10px;
+}
 
 
  .product-card img {
@@ -415,15 +426,15 @@
             <span class="text-muted"><s>₹<%= products[i].regularPrice %></s></span>
           </p>
           <%
-  const regular = products[i].regularPrice;
-  const sale = products[i].salePrice;
-  const discount = regular > sale ? Math.round(((regular - sale) / regular) * 100) : null;
-%>
-<p class="text-dark">
-  <% if (discount) { %>
-    <span class="text-danger fw-semibold ms-2 small splash-offer"><%= discount %>% OFF</span>
-  <% } %>
-</p>
+            const regular = products[i].regularPrice;
+            const sale = products[i].salePrice;
+            const discount = regular > sale ? Math.round(((regular - sale) / regular) * 100) : null;
+          %>
+          <p class="text-dark">
+            <% if (discount) { %>
+              <span class="text-danger fw-semibold ms-2 small splash-offer"><%= discount %>% OFF</span>
+            <% } %>
+          </p>
 
         </a>
         <!-- <div class="mt-auto">

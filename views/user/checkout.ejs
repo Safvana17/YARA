@@ -236,7 +236,7 @@
       const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value
       const finalAmount= parseFloat(document.getElementById('finalAmount').value)
       const walletBalance = parseFloat(document.getElementById('walletAmount').value)
-      const codLimit = 100000 //limit for cod
+      const codLimit = 5000 //limit for cod
 
       if(paymentMethod === 'cod'){
         if(finalAmount > codLimit){

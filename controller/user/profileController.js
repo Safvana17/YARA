@@ -175,7 +175,7 @@ const changeEmail = async (req, res) => {
     const userId = req.session.user
     try {
         const {email, password} = req.body
-        const userExists = await User.findById(userId)
+        const userExists = await User.findOne({_id: userId, email: email})
 
         if(userExists){
             const passwordMatch = await bcrypt.compare(password, userExists.password)
@@ -322,7 +322,7 @@ const changePassword = async (req, res) => {
         const userData = await User.findById(userId)
         const passwordMatch = await bcrypt.compare(currentPassword, userData.password)
         if(!passwordMatch){
-            return res.status(400).json({success: false, message: 'Incorrecet password'})
+            return res.status(400).json({success: false, message: 'Incorrecet current password'})
         }else{
             if(newPassword !== confirmPassword){
                 return res.status(400).json({success: false, message: 'New password and confirm password must be same'})

@@ -1,8 +1,10 @@
 const Brand = require('../../models/brandSchema')
 const Category = require('../../models/categorySchema')
+const cloudinary = require('../../utils/cloudinary')
 const sharp = require('sharp')
 const path = require('path')
 const fs = require('fs')
+
 
 
 const loadBrands = async (req, res) => {
@@ -41,15 +43,27 @@ const addBrand = async (req, res) => {
             return res.status(400).json({error: 'Brand already exists'})
         }
 
-        const filename = `brand_${Date.now()}.jpeg`
-        const outputPath = path.join(__dirname,'../../public/images', filename)
+        // const filename = `brand_${Date.now()}.jpeg`
+        // const outputPath = path.join(__dirname,'../../public/images', filename)
 
-        await sharp(req.file.buffer)
-              .resize(300, 300)
-              .jpeg({quality: 80})
-              .toFile(outputPath)
+        // await sharp(req.file.buffer)
+        //       .resize(300, 300)
+        //       .jpeg({quality: 80})
+        //       .toFile(outputPath)
 
-        const imageUrl = `/images/${filename}`
+        // const imageUrl = `/images/${filename}`
+        // console.log("req.file: ", req.file);
+
+        // const imageBase64 = `data:image/jpeg;base64,${req.file.buffer.toString('base64')}`
+
+        // const uploadResult = await cloudinary.uploader.upload(imageBase64, {
+        //     folder: 'yara-brands',
+        //     format:'jpeg',
+        //     transformation: [
+        //         {width: 300, height: 300, crop: 'fill'}
+        //     ]
+        // })
+        const imageUrl = req.file.path
         const newBrand = new Brand({
             brandName,
             brandImage: [imageUrl],

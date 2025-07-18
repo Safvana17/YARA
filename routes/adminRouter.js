@@ -6,6 +6,7 @@ const brandController = require('../controller/admin/brandController')
 const productController = require('../controller/admin/productController')
 const orderController = require('../controller/admin/orderController')
 const couponController = require('../controller/admin/couponController')
+const dashboardController = require('../controller/admin/dashboardController')
 const {adminAuth, userAuth} = require('../middleware/auth')
 const upload = require('../middleware/multerConfig')
 const router = express.Router()
@@ -13,7 +14,6 @@ const router = express.Router()
 router.get('/pageerror', adminController.pageError)
 router.get('/login', adminController.loadLogin)
 router.post('/login', adminController.login)
-router.get('/',adminAuth, adminController.loadDashboard)
 router.get('/logout', adminController.logout)
 
 //customer management
@@ -90,6 +90,10 @@ router.delete('/coupons/delete/:id', adminAuth, couponController.deleteCoupon)
 //sales report
 router.get('/report', adminAuth, adminController.getReport)
 router.get('/report/generate', adminAuth, adminController.getReport)
+
+//dashboard
+router.get('/',adminAuth, dashboardController.loadDashboard)
+router.get('/dashboard-data', dashboardController.getDashboardData)
 
 //refer and earn
 router.get('/referrals', adminAuth, adminController.loadReferralPage)

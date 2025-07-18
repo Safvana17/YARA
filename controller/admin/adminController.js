@@ -33,16 +33,16 @@ const login = async (req, res) => {
         return res.redirect('/admin/pageerror')
     }
 }
-//dashbord
-const loadDashboard = async (req, res) => {
-   if(req.session.admin){
-    try {
-        res.render('dashboard')
-    } catch (error) {
-        res.redirect('/admin/pageerror')
-    }
-   }
-}
+// //dashbord
+// const loadDashboard = async (req, res) => {
+//    if(req.session.admin){
+//     try {
+//         res.render('dashboard')
+//     } catch (error) {
+//         res.redirect('/admin/pageerror')
+//     }
+//    }
+// }
 
 //logout
 const logout = async (req, res) => {
@@ -207,7 +207,6 @@ const getReport = async (req, res) => {
 module.exports = {
     loadLogin,
     login,
-    loadDashboard,
     logout, 
     pageError,
     loadReferralPage,

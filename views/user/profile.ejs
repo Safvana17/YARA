@@ -66,11 +66,11 @@
                 <div class="mb-3">
                     <label class="form-label">Gender</label><br/>
                     <div class="form-check form-check-inline">
-                        <input type="radio" name="gender" class="form-check-input" value="Male" <%= user.gender === 'Male' ? 'checked' : '' %> id="">
+                        <input type="radio" name="gender" id="genderMale" class="form-check-input" value="Male" <%= user.gender === 'Male' ? 'checked' : '' %>>
                         <label class="form-check-label">Male</label>
                     </div>
                      <div class="form-check form-check-inline">
-                        <input type="radio" name="gender" class="form-check-input" value="Female" <%= user.gender === 'Female' ? 'checked' : '' %> id="">
+                        <input type="radio" name="gender" id="genderFemale" class="form-check-input" value="Female" <%= user.gender === 'Female' ? 'checked' : '' %>>
                         <label class="form-check-label">Female</label>
                     </div>
                     <div class="error-message" id="gender-error"></div>
@@ -106,7 +106,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- Bootstrap Bundle JS (includes Popper) -->
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<!-- <script>
     document.getElementById('profilePicForm').addEventListener('change', async function (e) {
         e.preventDefault()
 
@@ -141,7 +141,7 @@
             })
         }
     })
-</script>
+</script> -->
 <script>
     document.getElementById('updateProfileForm').addEventListener('submit', async function (e) {
         e.preventDefault()
