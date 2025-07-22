@@ -65,40 +65,6 @@ const pageError = async (req, res) => {
     res.render('admin-error')
 }
 
-//refer and earn
-const loadReferralPage =async (req, res) => {
-    try {
-        const page = req.query.page || 1
-        const search = req.query.search || ''
-        const limit = 8
-        const skip = (page -1) * limit
-
-        const users = await User.find({
-            'walletTransaction': {
-                $elemMatch: {
-                    method: 'reward'
-                }
-            }
-        })
-        .populate('redeemedUsers', 'name email')
-        .select('name email referralCode redeemedUsers walletTransaction')
-        .skip(skip)
-        .limit(limit)
-
-        const count = await User.countDocuments()
-        const totalPages = Math.ceil( count / limit )
-
-        res.render('referrals', {
-            users,
-            currentPage: page,
-            totalPages,
-            search
-        })
-    } catch (error) {
-        console.error('Error while loading referrals page', error)
-        res.redirect('/pageerror')
-    }
-}
 
 //sales report
 const getReport = async (req, res) => {
@@ -109,7 +75,7 @@ const getReport = async (req, res) => {
         const limit = 10
         const skip = ( page - 1 ) * limit
         const {rangeType, startDate, endDate, format } = req.query 
-        const matchedQuery = {status: {$in: ['Delivered']}}
+        const matchedQuery = {status:  {$nin: ['Returned', 'Cancelled', 'Processing' ] } }
 
         if(rangeType === 'custom' && startDate && endDate){
             matchedQuery.createdAt = {
@@ -136,10 +102,9 @@ const getReport = async (req, res) => {
         let orderQuery = Order.find(matchedQuery)
               .populate('userId')
               .populate('orderItems.product')
+              .populate('orderItems.variant')
               .sort({createdAt: -1})
-        if(!format){
-            orderQuery = orderQuery.skip(skip).limit(limit)
-        }
+
         const orders = await orderQuery
         let totalSale = orders.length
         let totalAmount = 0
@@ -163,7 +128,9 @@ const getReport = async (req, res) => {
              totalAmount += orderTotal
              totalDiscount += discount
              totalOffer += offer
-
+        if(!format){
+            orderQuery = orderQuery.skip(skip).limit(limit)
+        }
              return {
                 orderId: order.orderId,
                 user: order.userId.name,
@@ -204,11 +171,14 @@ const getReport = async (req, res) => {
         res.redirect('/admin/pageerror')
     }
 }
+
+
+
+
 module.exports = {
     loadLogin,
     login,
     logout, 
     pageError,
-    loadReferralPage,
     getReport
 }

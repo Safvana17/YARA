@@ -68,7 +68,7 @@ router.delete('/product/remove-product-offer/:id', adminAuth, productController.
 //order managemnet
 router.get('/orders', adminAuth, orderController.getOrders)
 router.get('/order-details/:id', adminAuth, orderController.viewOrderDetails)
-router.post('/update-order-status/:id', adminAuth, orderController.updateOrderStatus)
+router.post('/update-order-status/:orderId/:itemId', adminAuth, orderController.updateOrderStatus)
 router.get('/download-invoice/:id', adminAuth, orderController.getInvoice)
 router.post('/approve-return/:id', adminAuth, orderController.approveReturnRequest)
 router.post('/cancel-return/:id', adminAuth, orderController.cancelReturnRequest)
@@ -95,8 +95,6 @@ router.get('/report/generate', adminAuth, adminController.getReport)
 router.get('/',adminAuth, dashboardController.loadDashboard)
 router.get('/dashboard-data', dashboardController.getDashboardData)
 
-//refer and earn
-router.get('/referrals', adminAuth, adminController.loadReferralPage)
 
 
 

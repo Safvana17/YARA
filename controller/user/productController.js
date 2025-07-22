@@ -20,7 +20,7 @@ const productDetails = async (req, res) => {
         const relatedProducts = await Product.find({
             category: productData.category._id,
             _id: {$ne: productData._id}
-        }).limit(4)
+        }).limit(8)
 
         const totalStock = productVariant.reduce((sum, v) => sum+v.stockQuantity, 0)
         res.render('product-details',{

@@ -11,19 +11,6 @@
     <% if(order.status === 'Cancelled' || order.status === 'Return Request') { %>
       <p><strong>Reason:</strong><%= order.cancelReason || order.orderItems.itemCancelReason %></p>
     <% } %>
-    <div class="d-flex align-item-center gap=2 mb-3">
-    <% if(order.status !== 'Cancelled' || order.status !== 'Returned') { %>
-      <label for="status" class="me-2 fw-bold">Change Status:</label>
-      <select name="status" id="status" class="form-select me-3" style="width: 150px;" >
-        <option value="Pending" <%= order.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-        <option value="Shipped" <%= order.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-        <option value="Delivered" <%= order.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-        <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-        <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %>>Returned</option>
-      </select>
-      <button class="btn btn-outline-primary" onclick="updateStatus('<%= order._id %>')">Update</button>
-   <% } %>
-   </div>
    <% if (order.status === 'Return Request') { %>
       <div class="d-flex gap-2 mt-3">
         <button class="btn btn-outline-success" onclick="handleReturnAction('<%= order._id %>', 'approve')">Allow</button>
@@ -79,11 +66,20 @@
             <td>₹<%= item.price %></td>
             <td>₹<%= item.price * item.quantity %></td>
             <td>
-              <% if(item.itemStatus === 'Return Request') { %>
+                <% if(item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned' || item.itemStatus === 'Delivered' || item.itemStatus === 'Rejected' || order.status === 'Return Request') { %>
+                  <%= item.itemStatus %>
+                <% }else if(item.itemStatus === 'Return Request' && !allReturnRequested) { %>
                   <button class="btn btn-outline-success" onclick="handleItemReturnAction('<%= order._id %>','<%= item._id %>', 'approve')">Allow</button>
                   <button class="btn btn-outline-danger" onclick="handleItemReturnAction('<%= order._id %>','<%= item._id %>', 'reject')">Reject</button>
-              <%} else {%>
-                No action needed.
+                <%} else {%>
+                  <label for="status" class="me-2 fw-bold">Change Status:</label>
+                  <select name="status" id="status-<%= item._id %>" class="form-select me-3" style="width: 150px;" >
+                    <option value="Pending" <%= item.itemStatus === 'Confirmed' ? 'selected' : '' %><%= item.itemStatus !== 'Confirmed' ? 'disabled' : '' %>>Pending</option>
+                    <option value="Delivered" <%= item.itemStatus === 'Delivered' ? 'selected' : '' %><%= item.itemStatus !== 'Confirmed' ? 'disabled' : '' %>>Delivered</option>
+                    <option value="Cancelled" <%= order.status === 'Cancelled' ? 'selected' : '' %><%= item.itemStatus === 'Cancelled' ? '' : '' %>>Cancelled</option>
+                    <option value="Returned" <%= order.status === 'Returned' ? 'selected' : '' %><%= item.itemStatus === 'Returned' ? '' : 'disabled' %>>Returned</option>
+                  </select>
+                  <button class="btn btn-outline-primary" onclick="updateStatus('<%= order._id %>', '<%= item._id %>')">Update</button>
               <% } %>
             </td>
           </tr>
@@ -153,10 +149,10 @@
   }
 </script>
 <script>
-  async function updateStatus(orderId) {
-    const status = document.getElementById('status').value.trim()
+  async function updateStatus(orderId, itemId) {
+    const status = document.getElementById(`status-${itemId}`).value.trim()
     try {
-      const response = await fetch(`/admin/update-order-status/${orderId}`, {
+      const response = await fetch(`/admin/update-order-status/${orderId}/${itemId}`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json'

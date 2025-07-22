@@ -90,6 +90,8 @@ const addToCartFromWishlist = async (req, res) => {
     const userId = req.session.user
     const {productId, variantId} = req.body
 
+    console.log('BODY', req.body)
+
     const product = await Product.findById(productId)
     const variant = await ProductVariant.findById(variantId)
 
@@ -162,6 +164,8 @@ const addToCartFromWishlist = async (req, res) => {
     })
 }catch(error){
     console.error('Error in add to cart', error)
+    console.error('Error in addToCartFromWishlist:', error.message, error.stack)
+
     return res.status(500).json({success: false, message: 'Internal server error'})
 }
 }

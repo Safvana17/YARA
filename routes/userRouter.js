@@ -10,6 +10,7 @@ const wishlistController = require('../controller/user/wishlistController')
 const walletController = require('../controller/user/walletController')
 const passport = require('passport')
 const {userAuth, adminAuth } = require('../middleware/auth')
+const upload = require('../middleware/multerConfig')
 
 router.get('/pageNotFound', userController.pageNotFound)
 //authentication management
@@ -48,7 +49,7 @@ router.post('/changeEmailResendOtp', userAuth, profileController.changeEmailRese
 router.get('/updateEmail', userAuth, profileController.getUpdateEmail)
 router.post('/updateEmail', userAuth, profileController.updateEmail)
 router.post('/update-profile', userAuth, profileController.updateProfile)
-router.post('/update-profile-pic', userAuth, profileController.updateProfilePic)
+router.post('/update-profile-pic', userAuth, upload.single('profileImage'), profileController.updateProfilePic)
 router.post('/change-password', userAuth, profileController.changePassword)
 router.get('/referAndEarn', userAuth, profileController.loadReferAndEarn)
 

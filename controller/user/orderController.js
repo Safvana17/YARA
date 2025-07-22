@@ -34,11 +34,14 @@ const createRazorpayOrder = async (req, res) => {
 
 //checking status
 function calculateOrderStatus(statuses) {
-  if (statuses.every(s => s === 'Cancelled')) return 'Cancelled';
-  if (statuses.every(s => s === 'Delivered')) return 'Delivered';
-  if (statuses.includes('Cancelled') && !statuses.every(s => s === 'Cancelled')) return 'Partially Cancelled';
-  if (statuses.includes('Returned')) return 'Partially Returned';
-  return 'Processing';
+  if (statuses.every(s => s === 'Cancelled')) return 'Cancelled'
+  if (statuses.every(s => s === 'Delivered')) return 'Delivered'
+  if(statuses.every(s => s === 'Return Request')) return 'Return Request'
+  if(statuses.every(s => s === 'Returned')) return 'Returned'
+  if(statuses.some(s => s === 'Delivered')) return 'Partially Delivered '
+  if (statuses.includes('Cancelled') && !statuses.every(s => s === 'Cancelled')) return 'Partially Cancelled'
+  if (statuses.includes('Returned')) return 'Partially Returned'
+  return 'Processing'
 }
 
 
@@ -132,7 +135,7 @@ const placeOrder = async (req, res) => {
             if(coupon){
                 coupon.usedCount += 1
 
-                const userEntry = coupon.usedUsers.find(entry => entry,userId.toString() === userId.toString())
+                const userEntry = coupon.usedUsers.find(entry => entry.userId.toString() === userId.toString())
                 
                 if(userEntry){
                     userEntry.count += 1
@@ -206,17 +209,17 @@ const placeOrder = async (req, res) => {
         }
 
         //decrease stock
-        for(let item of orderItems){
-            await ProductVariant.findByIdAndUpdate(item.variant,{
+        await Promise.all(orderItems.map(item => 
+            ProductVariant.findByIdAndUpdate(item.variant,{
                 $inc : {stockQuantity: -item.quantity}
             })
-        }
+        ))
 
         //clear cart
         cartDoc.items = []
         await cartDoc.save()
 
-        res.status(200).json({success: true, message: 'Order placed', orderId: newOrder._id})
+        res.status(200).json({success: true, message: 'Order placed', orderId: newOrder._id, user})
     } catch (error) {
             console.error(' Error while making an order:', error.message);
     console.error(error.stack);
@@ -231,13 +234,14 @@ const placeOrder = async (req, res) => {
 const loadOrderSuccessPage = async (req, res) => {
     try {
         const userId = req.session.user 
+        const user = await User.findById(userId)
         const orderId = req.params.id 
         const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
         if(!order){
             return res.status(404).json({ success: false, message: 'Order not found'})
         }
 
-        res.render('order-success', { order })
+        res.render('order-success', { order, user })
     } catch (error) {
         console.error('Error while loading order success page', error)
         res.status(500).json({success: false, message: 'Internal server error'})
@@ -248,13 +252,14 @@ const loadOrderSuccessPage = async (req, res) => {
 const loadOrderFailurePage = async (req, res) => {
     try {
         const userId = req.session.user 
+        const user = await User.findById(userId)
         // const orderId = req.params.id 
         // const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
         // if(!order){
         //     return res.status(404).json({ success: false, message: 'Order not found'})
         // }
 
-        res.render('order-failed', )
+        res.render('order-failed',{user} )
     } catch (error) {
         console.error('Error while loading order success page', error)
         res.status(500).json({success: false, message: 'Internal server error'})
@@ -398,13 +403,9 @@ const returnOrder = async (req, res) => {
              return res.status(400).json({success: false, message: 'Order Alredy returned.'})
         }
 
-        // for(let item of order.orderItems){
-        //     const variant = await ProductVariant.findById(item.variant._id)
-        //     if(variant){
-        //         variant.stockQuantity += item.quantity
-        //         await variant.save()
-        //     }
-        // }
+        for(let item of order.orderItems){
+            item.itemStatus = 'Return Request'
+        }
 
         order.status = 'Return Request'
         order.cancelReason = reason
@@ -435,11 +436,14 @@ const cancelOrder = async (req, res) => {
         }
 
         for(let item of order.orderItems){
+            if(item.itemStatus !== 'Cancelled'){
+            item.itemStatus = 'Cancelled'
             const variant = await ProductVariant.findById(item.variant._id)
             if(variant){
                 variant.stockQuantity += item.quantity
                 await variant.save()
             }
+        }
         }
 
         order.status = 'Cancelled'
@@ -546,19 +550,23 @@ const deleteItemOrder = async (req, res) => {
             return res.status(404).json({success: false, message: 'Item not found!'})
         }
 
+        if (item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') {
+            return res.status(400).json({ success: false, message: 'Item already cancelled or returned.' });
+        }
 
         await ProductVariant.findByIdAndUpdate(item.variant,{
           $inc: { stockQuantity: item.quantity}
         })
 
 
-        item.itemStatus = 'Cancelled',
+        item.itemStatus = 'Cancelled'
         item.itemCancelReason = reason
-        await order.save()
+       
 
-        if(order.payment === 'razorpay' || order.payment === 'wallet'){
+        if(order.payment === 'razorpay' || order.payment === 'wallet' ){
             const refundAmount = item.price * item.quantity
             user.wallet += refundAmount
+            order.finalAmount -= refundAmount
 
             user.walletTransaction.push({
                 amount: refundAmount,
@@ -567,7 +575,9 @@ const deleteItemOrder = async (req, res) => {
                 description: `Refund for ${order.status.toLowerCase()} order ${order.orderId}.`
             })
 
-            await user.save()
+            await Promise.all([user.save(), order.save()])
+        }else{
+            await order.save()
         }
 
         // Recalculate overall orderStatus
@@ -605,6 +615,10 @@ const returnItemOrder = async (req, res) => {
         item.itemStatus = 'Return Request'
         item.itemCancelReason = reason
         await order.save()
+
+        // Recalculate overall orderStatus
+        order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
+        await order.save();
 
         return res.status(200).json({success: true, message: 'Order return request submitted'})
     } catch (error) {

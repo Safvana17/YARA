@@ -519,7 +519,7 @@ const addOffer = async (req, res) => {
         product.productOffer = offerValue
 
         const bestPrice = getBestOfferPrice(
-            product.regularPrice,
+            product.salePrice,
             offerValue,
             categoryoffer
         )
@@ -583,3 +583,7 @@ module.exports = {
     addOffer,
     removeOffer
 }
+
+
+
+     
