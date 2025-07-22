@@ -17,7 +17,9 @@ const loadWalletPage = async (req, res) => {
 //add money
 const getAddMoneyWallet = async (req, res) => {
     try {
-        res.render('add-wallet-money')
+        const userId = req.session.user 
+        const user = await User.findById(userId)
+        res.render('add-wallet-money', {user})
     } catch (error) {
         console.error('Error while loading add wallet money page', error)
         res.redirect('/pageNotFound')

@@ -6,6 +6,17 @@ const Coupon = require('../../models/couponSchema')
 const PDFDocument = require('pdfkit')
 
 
+//checking status
+function calculateOrderStatus(statuses) {
+  if (statuses.every(s => s === 'Cancelled')) return 'Cancelled'
+  if (statuses.every(s => s === 'Delivered')) return 'Delivered'
+  if(statuses.every(s => s === 'Return Request')) return 'Return Request'
+  if(statuses.every(s => s === 'Returned')) return 'Returned'
+  if(statuses.some(s => s === 'Delivered')) return 'Partially Delivered '
+  if (statuses.includes('Cancelled') && !statuses.every(s => s === 'Cancelled')) return 'Partially Cancelled'
+  if (statuses.includes('Returned')) return 'Partially Returned'
+  return 'Processing'
+}
 
 const getOrders = async (req, res) => {
     try {
@@ -57,7 +68,8 @@ const viewOrderDetails = async (req, res) => {
             return res.status(404).send('Order not found!')
         }
 
-        res.render('orderDetails',{order})
+        const allReturnRequested = order.orderItems.every(item => item.itemStatus === 'Return Request')
+        res.render('orderDetails',{order, allReturnRequested})
     } catch (error) {
         console.error('Error while loading order details page', error)
         res.redirect('/admin/pageerror')
@@ -67,7 +79,7 @@ const viewOrderDetails = async (req, res) => {
 //update order status
 const updateOrderStatus = async (req, res) => {
     try {
-        const orderId = req.params.id 
+        const {orderId, itemId} = req.params
         const {status} = req.body
         const order = await Order.findById(orderId)
 
@@ -78,25 +90,41 @@ const updateOrderStatus = async (req, res) => {
         if(order.status === 'Cancelled'){
             return res.status(400).json({success: false, message: 'Cannot change the status of cancelled order'})
         }
+        const item = order.orderItems.id(itemId)
+        if(!item){
+            return res.status(404).json({success: false, message: 'Item not found'})
+        }
+        if(item.itemStatus === 'Cancelled'){
+            return res.status(400).json({success: false, message: 'Cannot update cancelled item'})
+        }
+
+
         const validStatus = ['Pending', 'Shipped', 'Delivered', 'Cancelled', 'Returned']
 
         if(!validStatus.includes(status)){
             return res.status(400).json({success: false, message: 'Invalid status update'})
         }
 
-        for(let item of order.orderItems){
-            if(item.itemStatus !== 'Cancelled'){
-                item.itemStatus = status
-            }
-        }
-        order.status = status
+        // for(let item of order.orderItems){
+        //     if(item.itemStatus !== 'Cancelled'){
+        //         item.itemStatus = status
+        //     }
+        // }
+        // order.status = status
+        item.itemStatus = status
+        const statuses = order.orderItems.map(i => i.itemStatus)
+        if(statuses.every(s => s === 'Cancelled')) order.status = 'Cancelled'
+        else if(statuses.every(s => s === 'Delivered')) order.status = 'Delivered'
+        else if(statuses.includes('Delivered')) order.status = 'Partially Delivered'
+        else order.status = 'Partially Cancelled'
+
         await order.save()
 
         res.status(200).json({success: true, message: 'Order status upadated successfully'})
 
     } catch (error) {
         console.error('Error while updating the status', error)
-        re.status(500).json({success: false, message :'Internal server error'})
+        res.status(500).json({success: false, message :'Internal server error'})
     }
 }
 
@@ -182,6 +210,7 @@ const approveReturnRequest = async (req, res) => {
 
         //restock product
         for(let item of order.orderItems){
+            item.itemStatus = 'Returned'
             const variant = await ProductVariant.findById(item.variant._id)
             if(variant){
                 variant.stockQuantity += item.quantity
@@ -227,6 +256,9 @@ const cancelReturnRequest = async (req, res) => {
             return res.status(400).json({success: false, message: 'Order not in return state!'})
         }
 
+        for(let item of order.orderItems){
+            item.itemStatus = 'Rejected'
+        }
         order.status = 'Rejected'
         order.cancelReason = ''
         await order.save()
@@ -261,11 +293,12 @@ const approveItemReturnRequest = async (req, res) => {
         })
 
         item.itemStatus = 'Returned'
-        await order.save()
+       
 
         //creidit wallet
         const refundAmount = item.price * item.quantity
         user.wallet += refundAmount
+        order.finalAmount -= refundAmount
 
         user.walletTransaction.push({
             amount: refundAmount,
@@ -274,8 +307,10 @@ const approveItemReturnRequest = async (req, res) => {
             description: `Refund for returned order ${order.orderId}`
         })
 
-        await user.save()
+        await Promise.all([order.save(), user.save()])
 
+        order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
+        await order.save();
         
         res.status(200).json({success: true, message: 'Item return request approved!'})
     } catch (error) {

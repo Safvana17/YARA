@@ -43,6 +43,10 @@ app.use('/admin', adminRouter)
 app.use('/', userRouter)
 
 
+app.use((req, res, next) =>{
+    //console.log('hi')
+    res.status(404).render('page-404', {message: 'Page Not Found'})
+})
 
 app.listen(process.env.PORT,()=>{
     console.log(`Server started at ${process.env.PORT}`)

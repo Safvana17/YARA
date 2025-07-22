@@ -32,7 +32,7 @@
           
           <td><%= coupon.expiryDate.toLocaleDateString() %></td>
           <td>
-            <%= coupon.status ? 'Active' : 'Inactive' %>
+            <%= coupon.status === true || coupon.status === 'true' ? 'Active' : 'Inactive' %>
           </td>
           <td>
             <%= coupon.usedCount %> / <%= coupon.usageLimit %>

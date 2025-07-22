@@ -28,7 +28,7 @@
       <ul class="list-group text-start">
         <% user.redeemedUsers.forEach(ref => { %>
           <li class="list-group-item">
-            <i class="bi bi-person"></i> User ID: <%= ref %> <!-- (Or show name if populated) -->
+            <i class="bi bi-person"></i><span class="text-success fw-bold">User ID:</span> <%= ref._id %> <span class="text-success fw-bold">User Name:</span> <%= ref.name %>
           </li>
         <% }) %>
       </ul>

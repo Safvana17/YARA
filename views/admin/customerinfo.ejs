@@ -1,35 +1,96 @@
 <%- include('../../views/partials/admin/header') %>
-<h3>User Details</h3>
-<p><strong>Name:</strong> <%= user.name %></p>
-<p><strong>Email:</strong> <%= user.email %></p>
-<p><strong>Phone:</strong> <%= user.phone %></p>
-<p><strong>Status:</strong> <%= user.isBlocked ? 'Blocked' : 'Active' %></p>
 
-<h4>Addresses</h4>
-<ul>
-  <% addresses.forEach(addr => { %>
-    <li><%= addr.addressLine %>, <%= addr.city %>, <%= addr.state %>, <%= addr.zip %></li>
-  <% }) %>
-</ul>
+<div class="container my-4">
+  <h3 class="mb-4">User Details</h3>
 
-<h4>Orders</h4>
-<table class="table">
-  <thead>
-    <tr>
-      <th>Order ID</th><th>Date</th><th>Status</th><th>Amount</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% orders.forEach(order => { %>
-      <tr>
-        <td><%= order._id %></td>
-        <td><%= order.createdAt.toDateString() %></td>
-        <td><%= order.status %></td>
-        <td>₹<%= order.finalAmount %></td>
-      </tr>
-    <% }) %>
-  </tbody>
-</table>
+  <!-- User Profile -->
+  <div class="card p-4 shadow-sm mb-5">
+    <div class="row align-items-center">
+      <div class="col-md-2 text-center mb-3 mb-md-0">
+        <img src="<%= user.profileImage && user.profileImage.startsWith('http') ? user.profileImage : '/images/user-profile.png' %>" class="rounded-circle img-fluid border" width="120" height="120" alt="profile image" id="profileImagePreview">
+      </div>
+      <div class="col-md-10">
+        <p><strong>Name:</strong> <%= user.name %></p>
+        <p><strong>Email:</strong> <%= user.email %></p>
+        <p><strong>Phone:</strong> <%= user.phone %></p>
+        <p><strong>Status:</strong> 
+          <span class="badge <%= user.isBlocked ? 'bg-danger' : 'bg-success' %>">
+            <%= user.isBlocked ? 'Blocked' : 'Active' %>
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
 
+  <!-- Address Section -->
+  <h4 class="mb-3">Addresses</h4>
+  <% if (addressData.address.length === 0) { %>
+    <p>No address found.</p>
+  <% } else { %>
+    <% for (let i = 0; i < addressData.address.length; i += 3) { %>
+      <div class="row">
+        <% for (let j = i; j < i + 3 && j < addressData.address.length; j++) { %>
+          <div class="col-md-4 mb-4">
+            <div class="card p-3 shadow-sm h-100">
+              <h6 class="fw-bold"><%= addressData.address[j].addressType %> Address</h6>
+              <p><strong>Name:</strong> <%= addressData.address[j].name %></p>
+              <p><strong>House:</strong> <%= addressData.address[j].houseNo %></p>
+              <p><strong>City:</strong> <%= addressData.address[j].city %>, <%= addressData.address[j].state %> - <%= addressData.address[j].pinCode %></p>
+              <p><strong>Landmark:</strong> <%= addressData.address[j].landMark %></p>
+              <p><strong>Phone:</strong> <%= addressData.address[j].phone %> | <strong>Alt:</strong> <%= addressData.address[j].altPhone %></p>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  <% } %>
 
+  <!-- Orders Section -->
+  <h4 class="mt-5 mb-3">Orders</h4>
+  <% if (orders.length === 0) { %>
+    <p>No orders placed.</p>
+  <% } else { %>
+    <div class="table-responsive shadow-sm">
+      <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Order ID</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% orders.forEach(order => { %>
+            <tr>
+              <td><%= order._id %></td>
+              <td><%= order.createdAt.toDateString() %></td>
+              <td>
+                <span class="badge bg-primary"><%= order.status %></span>
+              </td>
+              <td>₹<%= order.finalAmount %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+      <% if(totalPages > 1) { %>
+        <nav class="mb-5">
+            <ul class="pagination justify-content-center">
+               <% for(let i=1; i<=totalPages; i++){ %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a class="page-link" href="/admin/viewcustomer/<%= user._id %>?page=<%= i %>"><%= i %></a>
+                </li>
+               <% } %>
+            </ul>
+        </nav>
+    <% } %>
 <%- include('../../views/partials/admin/footer') %>
+
+<!-- Bootstrap JS & jQuery -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

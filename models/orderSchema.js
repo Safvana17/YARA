@@ -73,7 +73,7 @@ const orderSchema = new Schema({
     status: {
         type: String,
         required: true,
-        enum: ["Pending","Processing","Shipped","Delivered","Failed","Cancelled","Return Request","Returned","Rejected","Out for delivery", "Partially Cancelled", "Partially Returned"],
+        enum: ["Pending","Processing","Shipped","Delivered","Failed","Cancelled","Return Request","Returned","Rejected","Out for delivery", "Partially Cancelled", "Partially Returned", "Partially Delivered"],
     },
     cancelReason: {
         type: String

@@ -174,30 +174,69 @@ const getDashboardData = async (req, res) => {
             {$project: {name: '$brand.brandName', totalQty: 1}}
         ])
 
+
+        
      // Totals
-    const totalOrders = await Order.countDocuments(matchAllStage);
+       const totalOrdersAgg = await Order.aggregate([
+            { $match: matchAllStage }, // Filter based on date or other conditions
+            { $unwind: '$orderItems' },
+            {
+                $group: {
+                _id: null,
+                totalOrders: { $sum: '$orderItems.quantity' }
+                }
+            }
+        ]);
 
-    const totalRevenueAgg = await Order.aggregate([
-      { $match: matchStage },
-      { $group: { _id: null, total: { $sum: '$finalAmount' } } }
-    ]);
-    const totalRevenue = totalRevenueAgg[0]?.total || 0;
+        const totalOrders = totalOrdersAgg[0]?.totalOrders || 0;
 
-    const totalCancels = await Order.countDocuments({ ...matchAllStage, status: 'Cancelled' });
-    const totalReturns = await Order.countDocuments({ ...matchAllStage, status: 'Returned' });
+
+        const totalRevenueAgg = await Order.aggregate([
+        {
+            $match: {
+            status: { $nin: ['Cancelled', 'Returned'] }, // Skip fully refunded orders
+            ...dateFilter
+            }
+        },
+        {
+            $group: {
+            _id: null,
+            totalRevenue: { $sum: '$finalAmount' }
+            }
+        }
+        ]);
+
+        const totalRevenue = totalRevenueAgg[0]?.totalRevenue || 0;
+
+
+    // const totalCancels = await Order.countDocuments({ ...matchAllStage, status: 'Cancelled' });
+    const cancelledCount = await Order.aggregate([
+        
+        {$unwind: '$orderItems'},
+        {$match: {'orderItems.itemStatus': 'Cancelled' ,...dateFilter}},
+        {$count: 'totalCancels'}
+    ])
+    const returnedCount = await Order.aggregate([
+        {$unwind: '$orderItems'},
+        {$match: {'orderItems.itemStatus': 'Returned', ...dateFilter}},
+        {$count: 'totalReturns'}
+    ])
 
         //status for pie chart
         const orderStatus = await Order.aggregate([
+            {$unwind: '$orderItems'},
             {
                 
                 $group: {
-                    _id: '$status',
+                    _id: '$orderItems.itemStatus',
                     count: {$sum: 1}
                 }
             }
         ])
 
-        
+
+        const totalCancels = cancelledCount[0]?.totalCancels || 0
+        const totalReturns = returnedCount[0]?.totalReturns || 0
         res.json({
             totalCancels,
             totalOrders,

@@ -76,10 +76,30 @@ const unblockCustomer =async (req, res) => {
 const customerInfo = async (req, res) => {
     try {
         const id = req.params.id
+        const limit = 10
+        const page = parseInt(req.query.page) || 1
+        const search = req.query.search || ''
+        const skip = (page-1)*limit
         const user = await User.findById(id)
-        const addresses = await Address.find({userId: id}).lean()
-        const orders = await Order.find({user: id}).populate('orderItems.product').sort({createdAt: -1}).lean()
-        res.render('customerinfo',{user, addresses, orders})
+        const addressData = await Address.findOne({userId: id}).lean()
+        const orders = await Order.find({userId: id})
+              .populate('orderItems.product orderItems.variant')
+              .sort({createdAt: -1})
+              .lean()
+              .skip(skip)
+              .limit(limit)
+
+        const count = await Order.find({userId: id}).countDocuments()
+        const totalPages = Math.ceil( count / limit )
+        // console.log('address:',addressData, 'orders:',orders, 'user:',user)
+        res.render('customerinfo',{
+            user, 
+            addressData, 
+            orders,
+            search,
+            totalPages,
+            currentPage: page
+        })
     } catch (error) {
         console.error('Error while viewing user info', error)
         res.redirect('/admin/pageerror')

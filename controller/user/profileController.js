@@ -232,7 +232,9 @@ const verifyChangeEmailOtp = async (req, res) => {
 //get update email
 const getUpdateEmail = async (req, res) => {
     try {
-        res.render('update-email')
+        const userId = req.session.user
+        const user = await User.findById(userId)
+        res.render('update-email', {user})
     } catch (error) {
         console.error('Error while loading update email', error)
         res.redirect('/pageNotFound')
@@ -297,16 +299,16 @@ const updateProfilePic = async (req, res) => {
     try {
         const userId = req.session.user
 
-        if(!req.file){
+        if(!req.file || !req.file.path){
             return res.status(400).json({success: false, message: 'No file uploaded'})
         }
-        const profileImage = req.file.filename
+        const imageUrl = req.file.path
         
         await User.findByIdAndUpdate(userId,{
-            profileImage: profileImage
+            profileImage: imageUrl
         })
 
-        res.json({success: true, profileImage})
+        res.json({success: true, profileImage: imageUrl})
     } catch (error) {
         console.error('Error while changing profile pic')
         res.status(500).json({message: 'Upload failed'})
@@ -355,7 +357,9 @@ const getAddressPage = async (req, res) => {
 //get add address
 const getAddAddress = async (req, res) => {
     try {
-        res.render('add-address')
+        const userId = req.session.user
+        const user = await User.findById(userId)
+        res.render('add-address', {user})
     } catch (error) {
         console.error('Error while loading add address page', error)
         res.redirect('/pageNotFound')
@@ -479,6 +483,7 @@ const loadReferAndEarn = async (req, res) => {
     try {
         const userId = req.session.user 
         const user = await User.findById(userId)
+              .populate('redeemedUsers', 'name')
       res.render('referAndEarn', {user})  
     } catch (error) {
        console.error('Error while loading refer and earn page', error)
