@@ -70,11 +70,9 @@ main {
     margin-left: auto;
 }
 .hero-section {
-    padding-top: 100px;
-    min-height: 100vh;
-    background: url('/images/stylish-happy-girl-shopping-portrait-modern-woman-with-shop-bag-laughing-smiling-satisfied.jpg') no-repeat center center/cover;
+    min-height: 50vh;
+    /* background: url('/images/stylish-happy-girl-shopping-portrait-modern-woman-with-shop-bag-laughing-smiling-satisfied.jpg') no-repeat center center/cover; */
     text-align: center;
-    padding: 100px 20px;
     text-align: center;
     justify-content: center;
     align-items: center;

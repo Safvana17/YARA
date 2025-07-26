@@ -2,6 +2,7 @@ const Order = require('../../models/orderSchema')
 const Brand = require('../../models/brandSchema')
 const Product = require('../../models/productSchema')
 const Category = require('../../models/categorySchema')
+const Notification = require('../../models/notificationSchema')
 const moment = require('moment')
 
 
@@ -22,7 +23,6 @@ const getDashboardData = async (req, res) => {
         const filter = req.query.filter || 'yearly'
         const start = req.query.start
         const end = req.query.end
-
         let dateFilter = {}
 
 
@@ -178,12 +178,11 @@ const getDashboardData = async (req, res) => {
         
      // Totals
        const totalOrdersAgg = await Order.aggregate([
-            { $match: matchAllStage }, // Filter based on date or other conditions
-            { $unwind: '$orderItems' },
+            { $match: matchAllStage }, 
             {
                 $group: {
                 _id: null,
-                totalOrders: { $sum: '$orderItems.quantity' }
+                totalOrders: { $sum: 1 }
                 }
             }
         ]);
@@ -246,7 +245,7 @@ const getDashboardData = async (req, res) => {
             bestProducts,
             bestCategories,
             bestBrands,
-            orderStatus
+            orderStatus,
         })
     } catch (error) {
         console.error('Error while generating dashboard data', error)
@@ -254,9 +253,19 @@ const getDashboardData = async (req, res) => {
     }
 }
 
+const markAllRead = async (req, res) => {
+    try {
+        await Notification.updateMany({isRead: false}, {$set: {isRead: true}})
+        res.json({success: true})
+    } catch (error) {
+        console.error('Mark all read error', error)
+        res.status(500).json({success: false})
+    }
+}
 module.exports = {
     loadDashboard,
-    getDashboardData
+    getDashboardData,
+    markAllRead
 }
 
 

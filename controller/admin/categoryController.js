@@ -127,8 +127,10 @@ const editCategory = async (req, res) => {
 const addOffer = async (req, res) => {
     try {
         const categoryId = req.params.id 
-        const { offerValue } = req.body
+        const { offerValue, startDate, endDate } = req.body
 
+        const start = new Date(startDate)
+        const end = new Date(endDate)
         if(isNaN(offerValue) || offerValue < 1 || offerValue > 90){
             return res.status(400).json({ success: false, message: 'Invalid offer value'})
         }
@@ -138,24 +140,28 @@ const addOffer = async (req, res) => {
         }
 
         category.categoryOffer = offerValue
+        category.offerStartDate = start
+        category.offerEndDate = end
+        category.isOfferActive = false
         await category.save()
+       
 
-        const products = await Product.find({category: categoryId})
+        // const products = await Product.find({category: categoryId})
 
-        for(let product of products){
-            const productoffer = product.productOffer || 0
-            const bestOffer = getBestOfferPrice(
-                product.regularPrice,
-                productoffer,
-                offerValue
-            )
+        // for(let product of products){
+        //     const productoffer = product.productOffer || 0
+        //     const bestOffer = getBestOfferPrice(
+        //         product.regularPrice,
+        //         productoffer,
+        //         offerValue
+        //     )
 
-            product.salePrice = bestOffer !== null ? bestOffer : product.baseSalePrice
-            await product.save()
-        }
+        //     product.salePrice = bestOffer !== null ? bestOffer : product.baseSalePrice
+        //     await product.save()
+        // }
 
         //await Category.findByIdAndUpdate(categoryId,{categoryOffer: offerValue})
-        res.status(200).json({success: true, message: 'Offer addedd successfully.'})
+        res.status(200).json({success: true, message: 'Offer addedd/scheduled successfully.'})
 
     } catch (error) {
         console.error('Error while adding offer', error)

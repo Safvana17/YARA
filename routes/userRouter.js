@@ -11,6 +11,7 @@ const walletController = require('../controller/user/walletController')
 const passport = require('passport')
 const {userAuth, adminAuth } = require('../middleware/auth')
 const upload = require('../middleware/multerConfig')
+const { info } = require('pdfkit')
 
 router.get('/pageNotFound', userController.pageNotFound)
 //authentication management
@@ -21,17 +22,38 @@ router.get('/signup', userController.loadSignup)
 router.post('/signup', userController.signup)
 router.post('/verify-otp',userController.verifyOtp)
 router.post('/resendOtp', userController.resendOTP)
-router.get('/auth/google',passport.authenticate('google',{scope:['profile','email'],prompt: 'consent select_account'}))
-router.get('/auth/google/callback', passport.authenticate('google',{failureRedirect:'/signup'}),(req, res)=>{
-    req.session.user = req.user._id;
-    res.redirect('/')
+router.get('/auth/google',(req, res, next) =>{
+    const state = req.query.state || 'login'
+    passport.authenticate('google',{
+        scope:['profile','email'],
+        prompt: 'consent select_account', 
+        state: state
+    })(req, res, next)
 })
 
+
+// router.get('/auth/google/callback', passport.authenticate('google',{failureRedirect:'/signup'}),(req, res)=>{
+//     req.session.user = req.user._id;
+//     res.redirect('/')
+// })
+
+router.get('/auth/google/callback', (req, res, next) => {
+    const state = req.query.state || 'login'
+    passport.authenticate('google', async(err, user, info) => {
+        if(err) return next(err)
+            if(!user) {
+                const redirectUrl = state === 'signup' ? 'signup' : 'login'
+                return res.render(redirectUrl, {message: info?.message || 'Google login failed'})
+            }
+            req.session.user = req.user._id
+            return res.redirect('/')
+    })(req, res, next)
+})
 
 //home page and shopping page
 router.get('/', userController.loadHome)
 router.get('/shop', userAuth, userController.loadShoppingPage)
-router.get('/search', userAuth, userController.searchProducts)
+//router.get('/search', userAuth, userController.searchProducts)
 
 //profile management
 router.get('/userProfile', userAuth, profileController.loadUserProfile)

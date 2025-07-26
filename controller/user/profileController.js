@@ -372,18 +372,26 @@ const addAddress = async (req, res) => {
         const userId = req.session.user
         const userData = await User.findById(userId)
 
-        const {name, addressType, houseNo, city, state, landMark,pinCode, phone, altPhone} = req.body
+        let {name, addressType, houseNo, city, state, landMark,pinCode, phone, altPhone, isDefault} = req.body
+
+        isDefault = isDefault === 'on'
 
         const userAddress = await Address.findOne({userId: userData._id})
+        if(isDefault && userAddress){
+            // await Address.updateMany({userId}, {'address.isDefault': false})
+            userAddress.address.forEach(addr => {
+                addr.isDefault = false
+            })
+        }
         if(!userAddress){
             const newAddress = new Address({
                 userId: userData._id,
-                address: [{addressType, name, houseNo, city, state, landMark, pinCode, phone, altPhone}]
+                address: [{addressType, name, houseNo, city, state, landMark, pinCode, phone, altPhone, isDefault: isDefault || false}]
             })
 
             await newAddress.save()
         }else{
-            userAddress.address.push({addressType, name, houseNo, city, state, landMark, pinCode, phone, altPhone})
+            userAddress.address.push({addressType, name, houseNo, city, state, landMark, pinCode, phone, altPhone, isDefault: isDefault || false})
             await userAddress.save()
         }
         res.status(200).json({success: true, message: 'Address added successfully.'})
@@ -424,9 +432,17 @@ const editAddress = async (req, res) => {
         const userId = req.session.user
         const addressId = req.params.id
 
-        const {name, addressType, houseNo, city, state, landMark,pinCode, phone, altPhone} = req.body
+        let {name, addressType, houseNo, city, state, landMark,pinCode, phone, altPhone, isDefault} = req.body
+
+        const isDefaultFlag = isDefault === 'true'
         const findAddress = await Address.findOne({'address._id': addressId})
         if(findAddress){
+            if(isDefaultFlag){
+                await Address.updateOne(
+                    {userId: userId},
+                    {$set: {'address.$[].isDefault': false}}
+                )
+            }
            await Address.updateOne(
             {'address._id' : addressId},
             {$set: {
@@ -440,7 +456,8 @@ const editAddress = async (req, res) => {
                     landMark: landMark,
                     pinCode: pinCode,
                     phone: phone,
-                    altPhone: altPhone
+                    altPhone: altPhone,
+                    isDefault: isDefaultFlag
                 }
             }}
            )

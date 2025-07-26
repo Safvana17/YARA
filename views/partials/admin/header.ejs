@@ -70,6 +70,14 @@
       background-color: #fff;
       overflow-y: auto;
     }
+  .notification-dropdown {
+  max-height: 300px;
+  overflow-y: auto;
+  width: 300px;
+  max-width: 90vw;
+}
+
+
   </style>
 </head>
 <body>
@@ -80,7 +88,6 @@
       <a href="/admin/customers"><i class="bi bi-people me-2"></i>Customers</a>
       <a href="/admin/category"><i class="bi bi-tags me-2"></i>Category</a>
       <a href="/admin/brands"><i class="bi bi-award me-2"></i>Brands</a>
-      <a href="/admin/add-products"><i class="bi bi-plus-square me-2"></i>Add Product</a>
       <a href="/admin/products"><i class="bi bi-box-seam me-2"></i>Products</a>
       <a href="/admin/coupons"><i class="bi bi-ticket-perforated me-2"></i>Coupons</a>
       <a href="/admin/banners"><i class="bi bi-image me-2"></i>Banners</a>
@@ -95,6 +102,40 @@
       <!-- Header -->
       <header class="header d-flex justify-content-between align-items-center">
         <h3 class="mb-0 text-white">YARA </h3>
+        <div class="d-flex gap-3">
         <a href="/admin/logout" class="btn btn-outline-light btn-sm">Logout</a>
+
+<!-- Notification Bell -->
+<div class="dropdown position-relative" id="notification-wrapper" style="position: relative;">
+  <div id="notificationToggle" style="cursor:pointer;" class="nav-link text-white">
+    <i class="bi bi-bell fs-5"></i>
+    <% if (unreadCount > 0) { %>
+      <span class="notification-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 10px;">
+        <%= unreadCount %>
+      </span>
+    <% } %>
+  </div>
+
+  <!-- Custom Dropdown -->
+  <div id="notificationDropdown" class="shadow p-2" style="display:none; position: absolute; right: 0; top: 100%; background: #fff; border-radius: 6px; width: 320px; max-height: 300px; overflow-y: auto; z-index: 999;">
+    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+      <strong>Notifications</strong>
+      <i class="bi bi-check2-circle text-success" style="cursor:pointer;" onclick="markAllAsRead()" title="Mark all as read"></i>
+    </div>
+    <% if (notifications.length === 0) { %>
+      <div class="text-muted text-center py-3">No notifications</div>
+    <% } else { %>
+      <% notifications.forEach(n => { %>
+        <div class="px-2 py-1 border-bottom <%= n.isRead ? '' : 'fw-bold' %>">
+          <div><%= n.message %></div>
+          <small class="text-muted"><%= new Date(n.createdAt).toLocaleString() %></small>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+</div>
+
+
+       </div>
       </header>
       <main class="main">

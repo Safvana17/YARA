@@ -1,11 +1,16 @@
 <%- include("../../views/partials/user/navbar") %>
 
-<div class="bg-dark" style="color: yellowgreen;" id="couponMarqueeContainer">
-  <marquee behavior="scroll" direction="left" scrollamount="5" id="couponMarquee">
-   
-  </marquee>
 
+<div
+  id="couponMarqueeContainer"
+  style="color: black; background-image: url('/images/cpnbg1.jpg'); background-size: cover; background-repeat: no-repeat; height: 50px;"
+>
+  <marquee behavior="scroll" direction="left" scrollamount="5" id="couponMarquee">
+  </marquee>
 </div>
+
+
+
 
 <div class="container my-5">
   <h3 class="mb-4 text-center">Checkout</h3>
@@ -82,7 +87,7 @@
                   name="selectedAddress" 
                   value="<%= address._id %>" 
                   id="address-<%= address._id %>" 
-                  <%= address._id.toString() === selectedAddress.toString() ? 'checked' : '' %>
+                  <%= selectedAddress && address._id.toString() === selectedAddress._id.toString() ? 'checked' : '' %>
                 >
                 <label class="form-check-label ms-2" for="address-<%= address._id %>">
                   <strong><%= address.name %></strong> | <%= address.addressType %><br>
@@ -104,7 +109,7 @@
         <div class="card shadow-sm p-4">
           <h5 class="mb-3">Payment Method</h5>
           <div class="form-check">
-            <input class="form-check-input" type="radio" name="payment" id="cod" value="cod" checked>
+            <input class="form-check-input" type="radio" name="payment" id="cod" value="cod">
             <label class="form-check-label" for="cod">Cash on Delivery (COD)</label>
           </div>
           <div class="form-check">
@@ -127,17 +132,24 @@
           <h5 class="mb-3">Order Summary</h5>
 
           <div class="d-flex justify-content-between">
-            <span>Subtotal</span>
+            <span>Subtotal (<%= cartItems.length %> items)</span>
             <span>₹<%= totalAmount.toFixed(2) %></span>
           </div>
           <div class="d-flex justify-content-between">
             <span>Shipping</span>
             <span>₹<%= shippingCharge %></span>
           </div>
-          <div class="d-flex justify-content-between">
-            <span>Discount</span>
-            <span class="text-success" id="discountAmount">- ₹<%= appliedCoupon ? appliedCoupon.discount : 0 %></span>
-          </div>
+            <% if (appliedCoupon) { %>
+              <div class="d-flex justify-content-between">
+                <span>Coupon Discount (<%= appliedCoupon.code %>)</span>
+                <span class="text-success" id="discountAmount">- ₹<%= appliedCoupon.discount %></span>
+              </div>
+            <% } else { %>
+              <div class="d-flex justify-content-between">
+                <span>Coupon Discount</span>
+                <span class="text-success" id="discountAmount">- ₹0</span>
+              </div>
+            <% } %>
           <div class="d-flex justify-content-between">
             <span>Tax ( 3% )</span>
             <span>₹<%= tax %></span>
@@ -238,6 +250,14 @@
       const walletBalance = parseFloat(document.getElementById('walletAmount').value)
       const codLimit = 5000 //limit for cod
 
+      if(!paymentMethod){
+        Swal.fire({
+          icon: 'warning',
+          title: 'Warning',
+          text: 'Please select payment Method'
+        })
+        return
+      }
       if(paymentMethod === 'cod'){
         if(finalAmount > codLimit){
           Swal.fire({

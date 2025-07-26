@@ -20,6 +20,18 @@ const categorySchema = new Schema({
         type: Number,
         default: 0
     },
+    offerStartDate: {
+       type: Date,
+       default: null
+    },
+    offerEndDate: {
+        type: Date,
+        default: null
+    },
+    isOfferActive: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
