@@ -4,6 +4,7 @@ const Product =require('../../models/productSchema')
 const Address = require('../../models/addressSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Order = require('../../models/orderSchema')
+const Notification = require('../../models/notificationSchema')
 const Coupon = require('../../models/couponSchema')
 const razorpayInstance = require('../../utils/razorpayInstance')
 const puppeteer = require('puppeteer')
@@ -38,7 +39,7 @@ function calculateOrderStatus(statuses) {
   if (statuses.every(s => s === 'Delivered')) return 'Delivered'
   if(statuses.every(s => s === 'Return Request')) return 'Return Request'
   if(statuses.every(s => s === 'Returned')) return 'Returned'
-  if(statuses.some(s => s === 'Delivered')) return 'Partially Delivered '
+  if(statuses.some(s => s === 'Delivered')) return 'Partially Delivered'
   if (statuses.includes('Cancelled') && !statuses.every(s => s === 'Cancelled')) return 'Partially Cancelled'
   if (statuses.includes('Returned')) return 'Partially Returned'
   return 'Processing'
@@ -411,6 +412,10 @@ const returnOrder = async (req, res) => {
         order.cancelReason = reason
         await order.save()
 
+        await Notification.create({
+            message: `Return requested for entire order (${orderId}) by ${user.name}`
+        })
+
         return res.status(200).json({success: true, message: 'Order return request submitted'})
     } catch (error) {
         console.error('Error while cancelling order', error)
@@ -616,9 +621,17 @@ const returnItemOrder = async (req, res) => {
         item.itemCancelReason = reason
         await order.save()
 
+
         // Recalculate overall orderStatus
         order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
         await order.save();
+
+        const product = await Product.findById(item.product)
+        
+
+        await Notification.create({
+            message: `Return requested for item (${product.name}) in order ${orderId.slice(-6)} by ${user.name}`
+        })
 
         return res.status(200).json({success: true, message: 'Order return request submitted'})
     } catch (error) {

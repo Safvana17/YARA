@@ -1,5 +1,11 @@
 <%- include("../../views/partials/user/navbar") %>
+<!-- <style>
+  .badge-sm {
+  font-size: 0.65rem;
+  padding: 0.25em 0.4em;
+}
 
+</style> -->
 <div class="container-fluid mt-5 mb-5">
   <div class="row">
     <!-- Sidebar -->
@@ -22,7 +28,11 @@
           <% addressData.address.forEach((addr, index) => { %>
             <div class="col-md-6 mb-4">
               <div class="card p-3 shadow-sm">
-                <h6><%= addr.addressType %> Address</h6>
+                <h6><%= addr.addressType %> Address
+                  <% if (addr.isDefault) { %>
+                  <span class="badge bg-success py-1 px-2 small">Default Address</span>
+                <% } %>
+                </h6>
                 <p><strong>Name:</strong> <%= addr.name %></p>
                 <p><strong>House No:</strong> <%= addr.houseNo %></p>
                 <p><strong>City:</strong> <%= addr.city %>, <%= addr.state %> - <%= addr.pinCode %></p>

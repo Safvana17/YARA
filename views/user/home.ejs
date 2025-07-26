@@ -1,7 +1,17 @@
 <%- include('../../views/partials/user/navbar') %>
 <!-- Swiper CSS -->
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<!-- AOS CSS -->
+<link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<!-- AOS JS -->
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+<script>
+  AOS.init();
+</script>
 
 
    <style>
@@ -78,8 +88,11 @@
     height: 100%;
     object-fit: cover;
     border-radius: 5px;
+    transition: transform 0.3s ease;
   }
-
+  .product-img:hover img {
+    transform: scale(1.05);
+  }
 
   .product-cart-wrap {
     border: 1px solid #ddd;
@@ -88,8 +101,12 @@
     transition: box-shadow 0.3s ease;
     background-color: #fff;
     height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.06);
   }
   .product-cart-wrap:hover {
+    transform: translateY(-5px) scale(1.02);
     box-shadow: 0 4px 20px rgba(0,0,0,0.1);
   }
 
@@ -227,6 +244,78 @@
   color: #fff;
 }
 
+.carousel,
+  .carousel-inner,
+  .carousel-item {
+    height: 100vh;
+    width: 100vw;
+  }
+
+  .carousel-item img {
+    object-fit: cover;
+  }
+
+  .carousel-caption {
+    background: rgba(0, 0, 0, 0.4); /* Optional: caption background */
+    padding: 1rem;
+    border-radius: 10px;
+  }
+  .carousel-caption.custom-caption {
+  top: 50%;
+  transform: translateY(-50%);
+  bottom: auto;
+  text-align: center;
+}
+
+.custom-heading {
+  font-family: 'Playfair Display', serif; /* You can replace with another if you want */
+  font-size: 5rem;
+  letter-spacing: 2px;
+  font-weight: bold;
+  color: goldenrod;
+}
+
+.custom-subtext {
+  font-size: 0.2rem;
+  color: #f1f1f1;
+}
+
+.coupon-banner {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+
+.banner-slide {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.banner-text {
+  position: absolute;
+  bottom: 30px;
+  left: 40px;
+  color: #fff;
+  background: rgba(0,0,0,0.5);
+  padding: 15px 20px;
+  border-radius: 8px;
+}
+
+.banner-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: yellowgreen;
+  padding: 8px 16px;
+  color: black;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+
  @media (max-width: 768px) {
     .product-img img {
       height: 200px;
@@ -234,14 +323,111 @@
   }
    </style>
    <header class="hero-section">
-    <div class="hero-content">
-        <h1>Welocome to YARA</h1>
-        <P>Style that defines you</P>
-        <a href="/shop">
-            <button class="btn btn-info" >Shop Now</button>
-        </a>
+  <div id="carouselExampleCaptions" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
+  <div class="carousel-indicators">
+    <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+    <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="1" aria-label="Slide 2"></button>
+    <button type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide-to="2" aria-label="Slide 3"></button>
+  </div>
+
+  <div class="carousel-inner">
+    <!-- Slide 1 with collage -->
+    <div class="carousel-item active">
+      <div class="d-flex w-100 h-100">
+        <!-- Left tall image -->
+        <div class="w-50 h-100">
+          <img src="/images/kurta.jpg" class="w-100 h-100" alt="Left Image">
+        </div>
+        <!-- Right two stacked images -->
+        <div class="w-50 d-flex flex-column">
+          <div class="h-50">
+            <img src="/images/home1.jpg" class="w-100 h-100" alt="Top Right Image">
+          </div>
+          <div class="h-50">
+            <img src="/images/home5.jpg" class="w-100 h-100" alt="Bottom Right Image">
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide 1 caption -->
+      <div class="carousel-caption custom-caption">
+        <h1 class="custom-heading">YARA</h1>
+        <p class="custom-subtext">Grace in every thread, elegance in every step.</p>
+      </div>
     </div>
-   </header>
+
+    <!-- Slide 2 -->
+    <div class="carousel-item">
+      <img src="/images/couponbg.jpg" class="d-block w-100 h-100" alt="Slide 2">
+      <div class="carousel-caption custom-caption">
+        <h1 class="custom-heading">YARA</h1>
+        <p class="custom-subtext">Unfold your elegance with every wear.</p>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="carousel-item">
+      <img src="/images/home3.jpg" class="d-block w-100 h-100" alt="Slide 3">
+      <div class="carousel-caption custom-caption">
+        <h1 class="custom-heading">YARA</h1>
+        <p class="custom-subtext">Wrapped in softness, designed for you.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Previous</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleCaptions" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Next</span>
+  </button>
+</div>
+</header>
+<!-- banner section -->
+ 
+<% if (activeBanner && activeBanner.length > 0) { %>
+  <% if (activeBanner.length > 1) { %>
+    <!-- Swiper Slider -->
+    <section class="coupon-banner mt-3 swiper mySwiper" data-aos="zoom-in">
+      <div class="swiper-wrapper">
+        <% activeBanner.forEach(banner => { %>
+          <div class="swiper-slide banner-slide" style="background-image: url('<%= banner.image %>');">
+            <div class="banner-text">
+              <h2><%= banner.title %></h2>
+              <p><%= banner.description %></p>
+              <% if (banner.link) { %>
+                <a href="<%= banner.link %>" class="banner-btn">Shop Now</a>
+              <% } %>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <div class="swiper-button-next"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-pagination"></div>
+    </section>
+  <% } else { %>
+    <!-- Single Banner (No Swiper) -->
+    <section class="coupon-banner mt-3" data-aos="zoom-in">
+      <div class="banner-slide" style="background-image: url('<%= activeBanner[0].image %>');">
+        <div class="banner-text">
+          <h2><%= activeBanner[0].title %></h2>
+          <p><%= activeBanner[0].description %></p>
+          <% if (activeBanner[0].link) { %>
+            <a href="<%= activeBanner[0].link %>" class="banner-btn">Shop Now</a>
+          <% } %>
+        </div>
+      </div>
+    </section>
+  <% } %>
+<% } %>
+
+
+
+
  <section id="company-services">
     <div class="container my-5">
       <div class="row">
@@ -281,7 +467,7 @@
     </div>
   </section>
 
-<section class="product spad">
+<section class="product spad pb-3" style="background: linear-gradient(135deg, #fff7f7, #ffecec); border-radius: 16px;">
   <div class="container">
     <div class="section-title text-center">
       <h2>Trending Products</h2>
@@ -289,7 +475,7 @@
     <div class="swiper trendingSwiper">
       <div class="swiper-wrapper">
       <% trendingProducts.forEach(product => { %>
-        <div class="swiper-slide">
+        <div class="swiper-slide" data-aos="zoom-in" data-aos-duration="800">
           <div class="product-cart-wrap mb-30">
             <div class="product-img-action-wrap">
               <div class="product-img product-img-zoom">
@@ -314,7 +500,7 @@
 </section>
 
 <section class="py-5 text-white my-3" style="background: url('/images/yara.jpg') no-repeat center center/cover;">
-  <div class="container text-center py-5 bg-dark bg-opacity-50 rounded">
+  <div class="container text-center py-5 bg-dark bg-opacity-50 rounded" data-aos="flip-up" data-aos-duration="900">
     <h1 class="display-5 fw-bold mb-3">Introducing the Yara Collection</h1>
     <p class="lead mb-4">
       Yara isn't just a collection — it's a story of grace, tradition, and bold individuality.
@@ -332,7 +518,7 @@
     <div class="swiper trendingSwiper">
       <div class="swiper-wrapper">
       <% latestproducts.forEach(product => { %>
-        <div class="swiper-slide">
+        <div class="swiper-slide" data-aos="fade-up" data-aos-duration="800">
           <div class="product-cart-wrap mb-30">
             <div class="product-img-action-wrap">
               <div class="product-img product-img-zoom">
@@ -371,7 +557,7 @@
 
 
 <section class="promo-poster-section py-5">
-  <div class="container">
+  <div class="container" data-aos="fade-up" data-aos-duration="800">
     <div class="section-title text-center mb-4">
       <h2>Explore Our Collections</h2>
     </div>
@@ -381,7 +567,7 @@
         <div class="promo-poster" style="background-image: url('/images/abaya.jpg');">
           <div class="promo-overlay text-center text-white">
             <h3>Modest Wear</h3>
-            <a href="/shop" class="btn btn-light mt-2">Shop Now</a>
+            <a href="http://localhost:8000/shop?category=Abaya" class="btn btn-light mt-2">Shop Now</a>
           </div>
         </div>
       </div>
@@ -390,7 +576,7 @@
         <div class="promo-poster" style="background-image: url('/images/kurti.webp');">
           <div class="promo-overlay text-center text-white">
             <h3>Daily Wear</h3>
-            <a href="/shop" class="btn btn-light mt-2">Shop Now</a>
+            <a href="http://localhost:8000/shop?category=Kurti" class="btn btn-light mt-2">Shop Now</a>
           </div>
         </div>
       </div>
@@ -399,7 +585,7 @@
         <div class="promo-poster" style="background-image: url('/images/jackets.webp');">
           <div class="promo-overlay text-center text-white">
             <h3>Jackets</h3>
-            <a href="/shop" class="btn btn-light mt-2">Shop Now</a>
+            <a href="http://localhost:8000/shop?category=Jackets" class="btn btn-light mt-2">Shop Now</a>
           </div>
         </div>
       </div>
@@ -408,14 +594,14 @@
 </section>
 
 <section class="py-5 text-center text-white" style="background: url('/images/kurta.jpg') no-repeat center center/cover;">
-  <div class="container bg-dark bg-opacity-50 p-5 rounded shadow">
+  <div class="container bg-dark bg-opacity-50 p-5 rounded shadow" data-aos="zoom-in-up" data-aos-duration="800">
     <h2 class="display-5 fw-bold mb-3">Since 2020 — The Yara Way</h2>
     <p class="lead mx-auto" style="max-width: 700px;">
       At <strong>Yara</strong>, we believe fashion is more than just clothing — it's a story stitched into every thread. 
       Since our humble beginnings in 2020, we've been reimagining traditional Indian wear for the modern woman. 
       Every kurti, every design speaks of grace, strength, and timeless beauty.
     </p>
-    <a href="/shop?category=kurti" class="btn btn-outline-light mt-4 px-4 py-2">Explore Kurtis</a>
+    <a href="http://localhost:8000/shop?category=Kurti" class="btn btn-outline-light mt-4 px-4 py-2">Explore Kurtis</a>
   </div>
 </section>
 
@@ -425,6 +611,9 @@
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+
 <script>
   const swiper = new Swiper('.trendingSwiper', {
     slidesPerView: 4,
@@ -442,6 +631,25 @@
   });
 </script>
 
+<script>
+  console.log('Swiper file loaded'); // For debugging
+const bannerSwiper = new Swiper('.mySwiper', {
+  loop: true,
+  autoplay: {
+    delay: 3000,
+    disableOnInteraction: false,
+  },
+  navigation: {
+    nextEl: '.mySwiper-next',
+    prevEl: '.mySwiper-prev',
+  },
+  pagination: {
+    el: '.mySwiper-pagination',
+    clickable: true,
+  },
+});
+
+</script>
 
 </body>
 </html>

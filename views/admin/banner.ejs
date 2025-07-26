@@ -1,0 +1,65 @@
+<%-include('../../views/partials/admin/header')%>
+<style>
+    .container{
+        flex-grow: 1;
+    }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+      <div class="container mt-5 ml-5">
+        <h1>Banners</h1>
+
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-success">
+        <a href="/admin/add-banner" class="text-decoration-none text-white"><i class="bi bi-plus-square me-2"></i> Add Banner</a>
+    </button>
+</div>
+      </div>
+         <table class="table table-bordered table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Image</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Active</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if(data.length !== 0) { %>
+                    <% for(let i=0;i<data.length; i++) { %>
+                   <tr>
+                    <td>
+                        <img src="<%= data[i].image %>" style="height: 2rem; width: 3rem;" class="img-xs" alt="BannerImage">
+                    </td>
+                    <td><%= data[i].title %></td>
+                    <td><%= data[i].description %></td>
+                    <td><% if(data[i].startDate < Date.now() && data[i].endDate > Date.now()) { %>
+                        <p class="text-success">Active</p>
+                    <%} else { %>
+                         <p class="text-danger">Not Active</p>
+                    <% } %>
+                    </td>
+                    <td><a href="/admin/deleteBanner?id=<%= data[i]._id %>" title="Remove Banner"><i class="bi bi-trash"></i></a></td>
+                </tr>
+                <% } %>
+                <% } else { %>
+                    <tr>
+                        <td class="text-center" colspan="5">No Banners Available</td>
+                    </tr>
+                <% } %>
+            </tbody>
+         </table>
+              <!-- pagination -->
+  <% if(totalPages > 1) { %>
+    <nav>
+      <ul class="pagination justify-content-center">
+        <% for(let i=1; i<=totalPages; i++) { %>
+          <li class="page-item <%= i=== currentPage ? 'Active' : '' %>">
+            <a class="page-link" href="/admin/banners?page=<%= i %>&search=<%= search %>"><%= i %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
+<%-include('../../views/partials/admin/footer')%>

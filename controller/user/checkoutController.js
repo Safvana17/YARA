@@ -14,11 +14,12 @@ const loadCheckout = async (req, res) => {
         const addressDoc = await Address.findOne({userId}) 
         const addresses = addressDoc ?. address || []
 
-        const selectedAddress = addresses.length ? addresses[addresses.length - 1]._id : null
+        const selectedAddress = addresses.find(addr => addr.isDefault === true)
 
         const cartDoc = await Cart.findOne({userId}).populate('items.productId items.variantId')
         const cartItems = cartDoc ?. items || []
 
+        console.log('selectedAddress:', selectedAddress)
         
         const subTotal = cartItems.reduce((acc, curr) => acc + curr.totalPrice, 0)
         console.log("subtotal:",subTotal)

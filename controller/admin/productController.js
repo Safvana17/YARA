@@ -9,6 +9,8 @@ const fs = require('fs')
 const sharp = require('sharp')
 const cloudinary = require('../../utils/cloudinary')
 const getBestOfferPrice = require('../../utils/offerHelper')
+const Order = require('../../models/orderSchema')
+const { name } = require('ejs')
 
 
 
@@ -42,18 +44,18 @@ const LoadProducts = async (req, res) => {
             const totalStock = await getTotalStock(product._id)
             productsWithStock.push({...product._doc, totalStock})
         }
-        let sum = 0
-        const prod = await Product.find({})
-        for(let p of prod){
-            sum += p.regularPrice 
-        }
-        
+        // let sum = 0
+        // const prod = await Product.find({})
+        // for(let p of prod){
+        //     sum += p.regularPrice 
+        // }
+
         res.render('products',{
             products: productsWithStock,
             currentPage: page,
             totalPages,
             search,
-            sum
+            
         })
     } catch (error) {
         console.error('Error while loading products page', error)
@@ -261,88 +263,6 @@ const editProduct = async (req, res) => {
             return res.status(404).json({status: false, message: 'Product not found'})
         }
 
-        // for(let i=1; i<= 5; i++){
-        //     const croppedImageData = req.body[`croppedImage${i}`]
-
-        //     if(croppedImageData && croppedImageData.startsWith('data: image')){
-        //         const base64Data = croppedImageData.replace(/^data:image\/\w+;base64,/, '')
-        //         const imageBuffer = Buffer.from(base64Data, 'base64')
-
-        //         const filename = Date.now() + '-' + `cropped-image-${i}` + ".webp"
-        //         const filepath = path.join(__dirname, '../../public/images', filename)
-
-        //         await sharp(imageBuffer)
-        //               .webp({quality: 80})
-        //               .toFile(filepath)
-
-        //         const imagePath = `images/${filename}`
-
-        //         if(product.productImage[i-1]){
-        //             product.productImage[i-1] = imagePath
-        //         }else {
-        //             product.productImage.push(imagePath)
-        //         }
-        //     }else if(req.files && req.files[`image${i}`]){
-        //         const file = req.files[`image${i}`][0]
-        //         const filename = Date.now() + '-' + file.originalname.replace(/\s/g, "") + ".webp"
-        //         const filepath = path.join(__dirname, "../../public/images", filename)
-
-
-        //         await sharp(file.buffer)
-        //               .resize(800, 800, {fit: "inside", withoutEnlargement: true})
-        //               .webp({quality: 80})
-        //               .toFile(filepath)
-
-        //         const imagePath = `images/${filename}`
-
-        //         if(product.productImage[i-1]){
-        //             product.productImage[i-1] = imagePath
-        //         }else {
-        //             product.productImage.push(imagePath)
-        //         }
-        //     }
-        // }
-
-        // for(let i=1; i<= 5; i++){
-        //     const cloudinaryFile = req.files?.[`croppedImage${i}`]?.[0]
-
-        //     if(cloudinaryFile){
-        //         const imageUrl = cloudinaryFile.path
-
-        //         if(product.productImage[i-1]){
-        //             product.productImage[i-1] = imageUrl
-        //         }else{
-        //             product.productImage.push(imageUrl)
-        //         }
-        //     }
-        // }
-
-        // console.log(" req.files:", req.files);
-        // const uploadedImages = Object.keys(req.files || {})
-        //       .filter(key => key.startsWith('croppedImage'))
-        //       .map(key => req.files[key][0].path)
-
-        //       console.log(" Uploaded image URLs:", uploadedImages);
-        // uploadedImages.forEach(imageUrl => {
-        //     product.productImage.push(imageUrl)
-        // })
-
-
-//         const uploadedImages = [];
-
-// for (let i = 1; i <= 5; i++) {
-//   const key = `image${i}`;
-//   if (req.files?.[key]?.[0]?.path) {
-//     uploadedImages.push(req.files[key][0].path);
-//   }
-// }
-
-// console.log(" Uploaded image URLs:", uploadedImages);
-
-// // Add to product
-// product.productImage.push(...uploadedImages);
-
-
         const uploadedImages = [...product.productImage]; // Clone current images
 
         for (let i = 1; i <= 5; i++) {
@@ -505,7 +425,10 @@ const deleteSingleImage = async (req, res) => {
 const addOffer = async (req, res) => {
     try {
         const productId = req.params.id 
-        const { offerValue } = req.body
+        const { offerValue, startDate, endDate } = req.body
+        console.log(req.body)
+        const start = new Date(startDate)
+        const end = new Date(endDate)
 
         if(isNaN(offerValue) || offerValue < 1 || offerValue > 90){
             return res.status(400).json({ success: false, message: 'Invalid offer value'})
@@ -515,16 +438,19 @@ const addOffer = async (req, res) => {
             return res.status(400).json({success: false, message: 'Product not found or blocked'})
         }
 
-        const categoryoffer = product.category?.categoryoffer || 0
+        //const categoryoffer = product.category?.categoryoffer || 0
         product.productOffer = offerValue
+        product.offerStartDate = start
+        product.offerEndDate = end
+        product.isOfferActive = false
 
-        const bestPrice = getBestOfferPrice(
-            product.salePrice,
-            offerValue,
-            categoryoffer
-        )
+        // const bestPrice = getBestOfferPrice(
+        //     product.salePrice,
+        //     offerValue,
+        //     categoryoffer
+        // )
 
-        product.salePrice = bestPrice !== null ? bestPrice : product.baseSalePrice
+        // product.salePrice = bestPrice !== null ? bestPrice : product.baseSalePrice
         await product.save()
         //await Product.findByIdAndUpdate(productId,{productOffer: offerValue})
         res.status(200).json({success: true, message: 'Offer addedd successfully.'})

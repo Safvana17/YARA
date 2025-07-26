@@ -8,6 +8,8 @@ const path = require('path')
 const session = require('express-session')
 const db = require('./config/db')
 const passport = require('./config/passport')
+require('./utils/offerCron')
+require('./utils/bannerCron')
 const MongoStore = require('connect-mongo')
 const app = express()
 

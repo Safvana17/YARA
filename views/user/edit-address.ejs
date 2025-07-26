@@ -70,6 +70,12 @@
             <div class="error-message" id="altphone-error"></div>
           </div>
 
+          <div class="mb-3">
+            <label>
+              <input type="checkbox" name="isDefault" id="isDefault" value="true" <%= selectedAddress.isDefault?'checked':'' %>>Set as default Address
+            </label>
+          </div>
+
           <div class="text-end">
             <button type="submit" class="btn btn-primary">Save Address</button>
           </div>

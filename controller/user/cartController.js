@@ -61,6 +61,10 @@ const getCartPage = async (req, res) => {
 
        const grandTotal = validCartItems.reduce((total, item) => total + item.totalPrice, 0)
        const totalItems = validCartItems.reduce((total, item) => total + item.quantity, 0)
+       const deliveryCharge = grandTotal > 1000 ? 0 : 40
+       const tax = Math.round(grandTotal * 0.03) //3% tax
+       const discount = 0
+       const finalAmount = grandTotal + deliveryCharge + tax - discount
        console.log("total:", grandTotal)
        console.log("items:", totalItems)
 
@@ -73,7 +77,10 @@ const getCartPage = async (req, res) => {
         user,
         cartItems: validCartItems,
         totalItems,
+        deliveryCharge,
         totalAmount: grandTotal,
+        tax,
+        finalAmount,
         message: ''
        })
     } catch (error) {

@@ -3,12 +3,21 @@
     .container {
         flex-grow: 1;
     }
+    .error-message{
+        color: red;
+    }
 </style>
 <div class="container">
 <h2 class="mb-4 mt-5">All Products</h2>
-<form action="/admin/products" method="get" class="mb-3 d-flex mt-2">
+<div class="d-flex justify-content-end mb-4">
+    <button class="btn btn-info">
+        <a href="/admin/add-products" class="text-decoration-none text-white"><i class="bi bi-plus-square me-2"></i> Add Product</a>
+    </button>
+</div>
+<form action="/admin/products" method="get" class="mb-3 d-flex mt-2 gap-2">
     <input type="text" name="search" class="form-control me-2" placeholder="Search by product name" value="<%= search %>" />
-    <button type="submit" class="btn btn-outline-danger">Search</button>
+    <button type="submit" class="btn btn-outline-success">Search</button>
+    <a href="/admin/products" class="btn btn-outline-danger">Clear</a>
 </form>
 <% if(search && search.trim() !== '') {%>
     <p>Showing Result for: "<strong><%= search %></strong>"</p>
@@ -87,8 +96,21 @@
           <input type="hidden" name="entityId" id="entityId">
           <div class="mb-3">
             <label for="offerValue" class="form-label">Offer Percentage (%)</label>
-            <input type="number" id="offerValue" name="offerValue" min="1" max="90" class="form-control" required />
+            <input type="number" id="offerValue" name="offerValue" min="1" max="90" class="form-control"/>
+            <p class="error-message" id="error1"></p>
           </div>
+          <div class="mb-3">
+            <label for="offerStartDate" class="form-label">Start Date</label>
+            <input type="datetime-local" id="offerStartDate" name="offerStartDate" class="form-control"/>
+            <p class="error-message" id="error2"></p>
+        </div>
+
+        <div class="mb-3">
+        <label for="offerEndDate" class="form-label">End Date</label>
+        <input type="datetime-local" id="offerEndDate" name="offerEndDate" class="form-control"/>
+        <p class="error-message" id="error3"></p>
+        </div>
+
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Apply Offer</button>
@@ -155,13 +177,52 @@
 
         const product = document.getElementById('entityId').value
         const offerValue = document.getElementById('offerValue').value 
+        const startDate = document.getElementById('offerStartDate').value
+        const endDate = document.getElementById('offerEndDate').value
+        const err1 = document.getElementById('error1')
+        const err2 = document.getElementById('error2')
+        const err3 = document.getElementById('error3')
+        err1.textContent = ''
+        err2.textContent = ''
+        err3.textContent = ''
+        let isValid = true
+        if(!offerValue.trim() || offerValue < 1 || offerValue > 90){
+            err1.textContent = 'Please enter valid offer value (1 - 90)'
+            isValid = false
+        }
+        if(!startDate.trim()){
+            err2.textContent = 'Please enter valid start date'
+            isValid = false
+        }
+        if(!endDate.trim()){
+            err3.textContent = 'Please enter valid end date'
+            isValid = false
+        }
+        if(startDate && endDate){
+            const today = new Date()
+            today.setHours(0,0,0,0)
+            const start = new Date(startDate)
+            const end = new Date(endDate)
+            if(start < today || end < today){
+                err2.textContent = 'Start date cannot be less than today'
+                isValid = false
+            }
+            if(start > end){
+                err3.textContent = 'End date must be greater than start date'
+                isValid = false
+            }
+        }
+        if(!isValid) {
+            return
+        }
+
         try {
             const response = await fetch(`/admin/product/add-product-offer/${selectedProductId}`,{
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json'
                 },
-                body: JSON.stringify({offerValue})
+                body: JSON.stringify({offerValue, startDate, endDate})
 
             })
 

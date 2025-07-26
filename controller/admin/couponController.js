@@ -3,9 +3,23 @@ const User = require('../../models/userSchema')
 
 const loadCouponPage = async (req, res) => {
     try {
-        const coupons = await Coupon.find({}).sort({ createdAt : -1 }).lean()
+        const search = req.query.search || ''
+        const page = req.query.page || 1
+        const limit = 10
+        const skip = (page - 1) * limit
+        const coupons = await Coupon.find({})
+              .sort({ createdAt : -1 })
+              .lean()
+              .skip(skip)
+              .limit(limit)
+        const count = await Coupon.find().countDocuments()
+        const totalPages = Math.ceil(count / limit)
+
         res.render('coupon', {
-            coupons
+            coupons,
+            search,
+            totalPages,
+            currentPage: page
         })
     } catch (error) {
         console.error('Error while loading coupon page', error)

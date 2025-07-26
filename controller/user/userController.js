@@ -3,6 +3,7 @@ const Category = require('../../models/categorySchema')
 const Product = require('../../models/productSchema')
 const Brand = require('../../models/brandSchema')
 const Order = require('../../models/orderSchema')
+const Banner = require('../../models/bannerSchema')
 const bcrypt = require('bcrypt')
 const nodemailer = require('nodemailer')
 const env = require('dotenv')
@@ -212,7 +213,7 @@ const loadHome = async (req, res) => {
                 }
             },
             {$sort: {totalQty: -1 } },
-            {$limit: 8},
+            
             {
                 $lookup: {
                     from: 'products',
@@ -222,13 +223,15 @@ const loadHome = async (req, res) => {
                 }
             },
             {$unwind: '$product'},
+            {$match: {'product.isBlocked': false}},
+            {$limit: 12},
             {
                 $project: {
                     _id: '$product._id',
                     name: '$product.name',
                     productImage: '$product.productImage',
                     salePrice: '$product.salePrice',
-                    totalQty: 1
+                    // totalQty: 1
                 }
             }
         ])
@@ -237,7 +240,11 @@ const loadHome = async (req, res) => {
             category: {$in: categories.map(c => c._id)}
         })
         .sort({ createdAt: -1})
-        .limit(8)
+        .limit(12)
+        
+        const activeBanner = await Banner.find({isActive: true}).sort({startDate: -1})
+        console.log(activeBanner)
+
         if(userId){
             const userData = await User.findOne({_id: userId})
             if(!userData.isBlocked){
@@ -245,14 +252,16 @@ const loadHome = async (req, res) => {
                      user: userData,
                      latestproducts: latestProduct,
                      trendingProducts,
-                    brands
+                    brands,
+                    activeBanner
                   })
             }else{
                 res.render('home', {
                     user: null,
                     latestproducts: latestProduct,
                     trendingProducts,
-                    brands
+                    brands,
+                    activeBanner
                 })
             }
         }else{
@@ -260,7 +269,8 @@ const loadHome = async (req, res) => {
                 user: null,
                 latestproducts: latestProduct,
                 trendingProducts,
-                brands
+                brands,
+                activeBanner
             })
         }
     } catch (error) {
@@ -347,12 +357,21 @@ const loadShoppingPage = async (req, res) => {
         const limit = 9
         const skip = ( page - 1 ) * limit
 
-        
+        // const allProducts = await Product.find().select('name');
+        // console.log(allProducts.map(p => p.name));
+
         const filter = {
             isBlocked: false,
             category: { $in: categoryIds},
         }
-        if(category) filter.category = category
+        if(category){
+            const categoryDoc = await Category.findOne({name: category, isListed: true})
+            if(categoryDoc){
+                filter.category = categoryDoc._id
+            }else{
+                filter.category = null
+            }
+        }
         if (brand) {
               const brandDoc = await Brand.findOne({ brandName: brand, isBlocked: false});
               if (brandDoc) {
@@ -400,63 +419,63 @@ const loadShoppingPage = async (req, res) => {
 }
 
 
-const searchProducts = async (req, res) => {
-    try {
-        const user = req.session.user;
-        const userData = await User.findOne({ _id: user });
+// const searchProducts = async (req, res) => {
+//     try {
+//         const user = req.session.user;
+//         const userData = await User.findOne({ _id: user });
 
-        let search = req.query.query || ''
+//         let search = req.query.query || ''
 
-        // Fetch only unblocked brands
-        const brands = await Brand.find({ isBlocked: false }).lean();
-        const allowedBrandNames = brands.map(b => b.brandName);
+//         // Fetch only unblocked brands
+//         const brands = await Brand.find({ isBlocked: false }).lean();
+//         const allowedBrandNames = brands.map(b => b.brandName);
 
-        const categories = await Category.find({ isListed: true }).lean();
-        const categoryIds = categories.map(category => category._id.toString());
+//         const categories = await Category.find({ isListed: true }).lean();
+//         const categoryIds = categories.map(category => category._id.toString());
 
-        let searchResult = [];
+//         let searchResult = [];
 
-        // If session already has filtered products
-        if (req.session.filteredProducts && req.session.filteredProducts.length > 0) {
-            searchResult = req.session.filteredProducts.filter(product =>
-                product.productName.toLowerCase().includes(search.toLowerCase()) &&
-                allowedBrandNames.includes(product.brand)
-            );
-        } else {
-            searchResult = await Product.find({
-                productName: { $regex: ".*" + search + ".*", $options: "i" },
-                isBlocked: false,
-                quantity: { $gt: 0 },
-                category: { $in: categoryIds },
-                brand: { $in: allowedBrandNames }
-            }).lean();
-        }
+//         // If session already has filtered products
+//         if (req.session.filteredProducts && req.session.filteredProducts.length > 0) {
+//             searchResult = req.session.filteredProducts.filter(product =>
+//                 product.productName.toLowerCase().includes(search.toLowerCase()) &&
+//                 allowedBrandNames.includes(product.brand)
+//             );
+//         } else {
+//             searchResult = await Product.find({
+//                 productName: { $regex: ".*" + search + ".*", $options: "i" },
+//                 isBlocked: false,
+//                 quantity: { $gt: 0 },
+//                 category: { $in: categoryIds },
+//                 brand: { $in: allowedBrandNames }
+//             }).lean();
+//         }
 
-        // Sort and paginate
-        searchResult.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+//         // Sort and paginate
+//         searchResult.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        const itemsPerPage = 6;
-        const currentPage = parseInt(req.query.page) || 1;
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const totalPages = Math.ceil(searchResult.length / itemsPerPage);
-        const currentProduct = searchResult.slice(startIndex, endIndex);
+//         const itemsPerPage = 6;
+//         const currentPage = parseInt(req.query.page) || 1;
+//         const startIndex = (currentPage - 1) * itemsPerPage;
+//         const endIndex = startIndex + itemsPerPage;
+//         const totalPages = Math.ceil(searchResult.length / itemsPerPage);
+//         const currentProduct = searchResult.slice(startIndex, endIndex);
 
-        return res.render("shop", {
-            user: userData,
-            products: currentProduct,
-            category: categories,
-            brand: brands,
-            totalPages,
-            currentPage,
-            count: searchResult.length,
-        });
+//         return res.render("shop", {
+//             user: userData,
+//             products: currentProduct,
+//             category: categories,
+//             brand: brands,
+//             totalPages,
+//             currentPage,
+//             count: searchResult.length,
+//         });
 
-    } catch (error) {
-        console.log("Error in searchProducts:", error);
-        return res.redirect("/pagenotfound");
-    }
-};
+//     } catch (error) {
+//         console.log("Error in searchProducts:", error);
+//         return res.redirect("/pagenotfound");
+//     }
+// };
 module.exports = {
     loadSignup,
     loadHome,
@@ -468,5 +487,5 @@ module.exports = {
     logout,
     pageNotFound,
     loadShoppingPage,
-    searchProducts
+    
 }

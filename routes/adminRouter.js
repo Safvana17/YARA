@@ -7,42 +7,47 @@ const productController = require('../controller/admin/productController')
 const orderController = require('../controller/admin/orderController')
 const couponController = require('../controller/admin/couponController')
 const dashboardController = require('../controller/admin/dashboardController')
+const bannerController = require('../controller/admin/bannerController')
 const {adminAuth, userAuth} = require('../middleware/auth')
 const upload = require('../middleware/multerConfig')
+const notificationMiddleware = require('../middleware/notificationMiddleware')
 const router = express.Router()
+
 
 router.get('/pageerror', adminController.pageError)
 router.get('/login', adminController.loadLogin)
 router.post('/login', adminController.login)
 router.get('/logout', adminController.logout)
 
+router.use(adminAuth, notificationMiddleware)
+
 //customer management
-router.get('/customers',adminAuth,customerController.loadCustomers)
+router.get('/customers',adminAuth, customerController.loadCustomers)
 router.get('/block/:id', adminAuth, customerController.blockCustomer)
 router.get('/unblock/:id',adminAuth, customerController.unblockCustomer)
 router.get('/viewcustomer/:id', adminAuth, customerController.customerInfo)
 
 //category management
 router.get('/category', adminAuth, categoryController.loadCategories)
-router.post('/addcategory', adminAuth, categoryController.addCategory)
+router.post('/addcategory', adminAuth,categoryController.addCategory)
 router.get('/category/:id/list', adminAuth, categoryController.listCategory)
 router.get('/category/:id/unlist', adminAuth, categoryController.unlistCategory)
 router.get('/category/edit/:id', adminAuth, categoryController.getEditCategory)
 router.post('/category/edit/:id', adminAuth, categoryController.editCategory)
-router.post('/category/add-category-offer/:id', adminAuth, categoryController.addOffer)
+router.post('/category/add-category-offer/:id', adminAuth,categoryController.addOffer)
 router.delete('/category/remove-category-offer/:id', adminAuth, categoryController.removeOffer)
 
 //brand management
 router.get('/brands', adminAuth, brandController.loadBrands)
-router.post('/brand/add', adminAuth,upload.single('brandImage'), brandController.addBrand)
-router.get('/brand/block/:id', adminAuth, brandController.blockBrand)
+router.post('/brand/add', adminAuth, upload.single('brandImage'), brandController.addBrand)
+router.get('/brand/block/:id', adminAuth,  brandController.blockBrand)
 router.get('/brand/unblock/:id', adminAuth, brandController.unblockBrand)
 router.get('/brand/delete/:id', adminAuth, brandController.deleteBrand)
 
 //product management
 router.get('/products', adminAuth, productController.LoadProducts)
 router.get('/add-products', adminAuth, productController.getAddProducts)
-router.post('/add-product', adminAuth,upload.fields([
+router.post('/add-product', adminAuth, upload.fields([
     {name: 'image1', maxCount: 1},
     {name: 'image2', maxCount: 1},
     {name: 'image3', maxCount: 1},
@@ -67,10 +72,10 @@ router.delete('/product/remove-product-offer/:id', adminAuth, productController.
 
 //order managemnet
 router.get('/orders', adminAuth, orderController.getOrders)
-router.get('/order-details/:id', adminAuth, orderController.viewOrderDetails)
+router.get('/order-details/:id', adminAuth,  orderController.viewOrderDetails)
 router.post('/update-order-status/:orderId/:itemId', adminAuth, orderController.updateOrderStatus)
 router.get('/download-invoice/:id', adminAuth, orderController.getInvoice)
-router.post('/approve-return/:id', adminAuth, orderController.approveReturnRequest)
+router.post('/approve-return/:id', adminAuth,orderController.approveReturnRequest)
 router.post('/cancel-return/:id', adminAuth, orderController.cancelReturnRequest)
 router.post('/approve-item-return/:orderId/:itemId', (req, res, next) => {
   console.log("Route middleware hit");
@@ -92,9 +97,15 @@ router.get('/report', adminAuth, adminController.getReport)
 router.get('/report/generate', adminAuth, adminController.getReport)
 
 //dashboard
-router.get('/',adminAuth, dashboardController.loadDashboard)
-router.get('/dashboard-data', dashboardController.getDashboardData)
+router.get('/',dashboardController.loadDashboard)
+router.get('/dashboard-data',dashboardController.getDashboardData)
+router.post('/notifications/mark-read', dashboardController.markAllRead)
 
+//banner management
+router.get('/banners', adminAuth, bannerController.loadBnnerPage )
+router.get('/add-banner', adminAuth, bannerController.getAddBannerPage)
+router.post('/addBanner', adminAuth, upload.single("image"), bannerController.addBanner)
+router.get('/deleteBanner', adminAuth, bannerController.deleteBanner)
 
 
 

@@ -12,7 +12,8 @@ const loadWishlist = async (req, res) => {
 
         const products = await Product.find({_id: {$in: user.wishlist}}).populate('category')
         const productId = products.map(p => p._id)
-
+      
+ 
         const variants = await ProductVariant.find({productId: {$in: productId}})
 
         const productsWithVariants = products.map(product =>{
@@ -24,9 +25,11 @@ const loadWishlist = async (req, res) => {
                 variants: matchedVariants
             }
         })
+
+        
         res.render('wishlist',{
             user,
-            products: productsWithVariants
+            products: productsWithVariants,
         })
     } catch (error) {
         console.error('Error while loading wishlist page', error)

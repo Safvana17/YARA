@@ -6,9 +6,10 @@
 </style>
 <div class="container mt-5 ml-5">
   <h1>Orders</h1>
-  <form action="/admin/orders" method="get" class="d-flex mb-3">
-    <input type="search" name="search" class="form-control me-2" id="search" placeholder="Search Customers..." value="<%= search %>">
-    <button type="submit" class="btn btn-outline-danger" >Search</button>
+  <form action="/admin/orders" method="get" class="d-flex mb-3 gap-2">
+    <input type="search" name="search" class="form-control me-2" id="search" placeholder="Search Orders..." value="<%= search %>">
+    <button type="submit" class="btn btn-outline-success" >Search</button>
+    <a href="/admin/orders" class="btn btn-outline-danger">Clear</a>
   </form>
   <table class="table table-bordered table-striped" >
     <thead class="table-dark">
