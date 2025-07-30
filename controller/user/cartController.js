@@ -2,6 +2,7 @@ const Cart = require('../../models/cartSchema')
 const Product = require('../../models/productSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const User = require('../../models/userSchema')
+const STATUS = require('../../utils/statusCodes')
 const mongoose = require('mongoose')
 
 
@@ -99,11 +100,11 @@ const addToCart = async (req, res) => {
     const variant = await ProductVariant.findById(variantId)
 
     if(!product || !variant){
-        return res.status(404).json({success: false, message: 'Product or variant not found'})
+        return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product or variant not found'})
     }
 
     if(variant.stockQuantity <= 0){
-        return res.status(400).json({success: false, message: 'Selected variant is out of stock'})
+        return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Selected variant is out of stock'})
     }
 
     const user = await User.findById(userId)
@@ -129,14 +130,14 @@ const addToCart = async (req, res) => {
 
     if(existingItem){
         if(existingItem.quantity >= 3){
-            return res.status(400).json({
+            return res.status(STATUS.BAD_REQUEST).json({
                 success: false, 
                 message: 'Maximum 3 quantity per variant allowed',
                 quantity: existingItem.quantity
             })
         }
         if(existingItem.quantity >= variant.stockQuantity){
-            return res.status(400).json({success: false, message: 'Not enough stock available', quantity: existingItem.quantity})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Not enough stock available', quantity: existingItem.quantity})
         }
         existingItem.quantity += 1
         existingItem.totalPrice = Number(existingItem.quantity) * existingItem.price
@@ -165,7 +166,7 @@ const addToCart = async (req, res) => {
     })
 }catch(error){
     console.error('Error in add to cart', error)
-    return res.status(500).json({success: false, message: 'Internal server error'})
+    return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
 }
 }
 
@@ -183,7 +184,7 @@ const removeFromCart = async (req, res) => {
                     }
                 })
         if(!user || !user.cart.length){
-            return res.status(404).json({success: false, message: 'Cart not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Cart not found!'})
         }
 
         let cartDoc = user.cart[0]
@@ -191,17 +192,17 @@ const removeFromCart = async (req, res) => {
              item._id.toString() === productId)
         
         if(index === -1){
-            return res.status(404).json({success: false, message: 'Product not found in the cart!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product not found in the cart!'})
         }
 
 
         cartDoc.items.splice(index, 1)
         await cartDoc.save()
 
-        return res.status(200).json({success: true, message: 'Product removed successfully from cart'})
+        return res.status(STATUS.OK).json({success: true, message: 'Product removed successfully from cart'})
     } catch (error) {
         console.error('Error while removing item from the cart')
-        return res.status(500).json({success: false, message: 'An error occured while removing item from the cart.'})
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'An error occured while removing item from the cart.'})
     }
 }
 
@@ -223,7 +224,7 @@ const updateQuantity = async (req, res) => {
         const cartDoc = user.cart[0]
         const item = cartDoc.items.id(productId)
         if(!item){
-            return res.status(404).json({success: false, message: 'Item not found in the cart!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Item not found in the cart!'})
         }
 
         const stock = item.variantId.stockQuantity
@@ -232,13 +233,13 @@ const updateQuantity = async (req, res) => {
 
         //check limits
         if(newQty < 1){
-            return res.status(400).json({success: false, message: 'Minimum quantity is 1'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Minimum quantity is 1'})
         }
         if(newQty > 3){
-            return res.status(400).json({success: false, message: 'Maximum 3 quantity per product variant allowed'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Maximum 3 quantity per product variant allowed'})
         }
         if(newQty > stock){
-            return res.status(400).json({success: false, message: 'Only' + stock + 'is available'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Only' + stock + 'is available'})
         }
 
         //update and save
@@ -251,7 +252,7 @@ const updateQuantity = async (req, res) => {
         const updatedTotal = cartDoc.items.reduce((acc, curr) => acc + curr.totalPrice, 0)
 
         req.session.cartTotal = updatedTotal
-        return res.status(200).json({
+        return res.status(STATUS.OK).json({
             success: true,
             newQuantity: item.quantity,
             itemTotal: item.totalPrice,
@@ -259,7 +260,7 @@ const updateQuantity = async (req, res) => {
         })
     } catch (error) {
         console.error('Error while updating quantity', error)
-        return res.status(500).json({success: false, message: 'Internal server error'})
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 module.exports = {

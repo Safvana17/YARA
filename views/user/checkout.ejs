@@ -161,7 +161,7 @@
           </div>
 
           <input type="hidden" name="finalAmount" id="finalAmount" value="<%= finalAmount %>">
-          <button type="submit" class="btn btn-success w-100 mt-4">Place Order</button>
+          <button type="submit" class="btn btn-success w-100 mt-4 plceOrderBtn">Place Order</button>
         </div>
       </div>
     </div>
@@ -238,6 +238,8 @@
   document.getElementById('placeOrderForm').addEventListener('submit', async function (e) {
     e.preventDefault()
   
+    const placeOrderBtn = document.querySelector('.plceOrderBtn')
+    placeOrderBtn.disabled = true
     const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
     if (!selectedAddress) {
       return Swal.fire('Please select a shipping address', '', 'warning');
@@ -387,16 +389,18 @@
     if(result.success){
       window.location.href = `/order-confirmed/${result.orderId}`
     }else{
-      Swal.fire({
-        icon: 'error',
-        title: 'Order Failed',
-        text: result.message || 'Something went wrong placing your order. Try again.',
-        confirmButtonText: 'Retry'
-      })
-      .then(()=>{
-        window.location.reload()
-      })
-    }
+    //   Swal.fire({
+    //     icon: 'error',
+    //     title: 'Order Failed',
+    //     text: result.message || 'Something went wrong placing your order. Try again.',
+    //     confirmButtonText: 'Retry'
+    //   })
+    //   .then(()=>{
+    //     window.location.reload()
+    //   })
+          console.log('Error: ', result.message)
+         window.location.href = `/order-failed`
+     }
   }
 </script>
 <script>

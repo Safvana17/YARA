@@ -2,6 +2,7 @@ const { default: mongoose } = require('mongoose')
 const Category = require('../../models/categorySchema')
 const getBestOfferPrice = require('../../utils/offerHelper')
 const Product = require('../../models/productSchema')
+const STATUS =require('../../utils/statusCodes')
 
 
 const loadCategories = async (req, res) => {
@@ -41,7 +42,7 @@ const addCategory = async (req, res) => {
     try {
         const existingCat = await Category.findOne({name: {$regex: new RegExp(`^${name}$`, 'i')}})
         if(existingCat){
-            return res.status(400).json({error: 'Category already exists'})
+            return res.status(STATUS.BAD_REQUEST).json({error: 'Category already exists'})
         }
         const newCategory = new Category({
             name,
@@ -51,7 +52,7 @@ const addCategory = async (req, res) => {
         return res.json({message: 'Category added successfully'})
     } catch (error) {
         console.error('Error while adding new category', error)
-        return res.status(500).json({error: 'Internal server error'})
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({error: 'Internal server error'})
     }
 }
 
@@ -105,7 +106,7 @@ const editCategory = async (req, res) => {
             _id: {$ne: id}
         })
         if(existCat){
-            return res.status(400).json({error: 'Category alredy existing, please enter another name.'})
+            return res.status(STATUS.BAD_REQUEST).json({error: 'Category alredy existing, please enter another name.'})
         }
         const updateCat = await Category.findByIdAndUpdate(id,{
             name: name,
@@ -113,9 +114,9 @@ const editCategory = async (req, res) => {
         },{new: true})
 
         if(updateCat){
-            res.status(200).json({message: 'Category updated successfully'})
+            res.status(STATUS.OK).json({message: 'Category updated successfully'})
         }else{
-            res.status(404).json({error: 'Category not found'})
+            res.status(STATUS.NOT_FOUND).json({error: 'Category not found'})
         }
     } catch (error) {
         console.error('Error while edit category', error)
@@ -132,11 +133,11 @@ const addOffer = async (req, res) => {
         const start = new Date(startDate)
         const end = new Date(endDate)
         if(isNaN(offerValue) || offerValue < 1 || offerValue > 90){
-            return res.status(400).json({ success: false, message: 'Invalid offer value'})
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid offer value'})
         }
         const category = await Category.findById(categoryId)
         if(!category || !category.isListed){
-            return res.status(400).json({success: false, message: 'Category not found or unlisted'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Category not found or unlisted'})
         }
 
         category.categoryOffer = offerValue
@@ -144,28 +145,12 @@ const addOffer = async (req, res) => {
         category.offerEndDate = end
         category.isOfferActive = false
         await category.save()
-       
 
-        // const products = await Product.find({category: categoryId})
-
-        // for(let product of products){
-        //     const productoffer = product.productOffer || 0
-        //     const bestOffer = getBestOfferPrice(
-        //         product.regularPrice,
-        //         productoffer,
-        //         offerValue
-        //     )
-
-        //     product.salePrice = bestOffer !== null ? bestOffer : product.baseSalePrice
-        //     await product.save()
-        // }
-
-        //await Category.findByIdAndUpdate(categoryId,{categoryOffer: offerValue})
-        res.status(200).json({success: true, message: 'Offer addedd/scheduled successfully.'})
+        res.status(STATUS.OK).json({success: true, message: 'Offer addedd/scheduled successfully.'})
 
     } catch (error) {
         console.error('Error while adding offer', error)
-        res.status(500).json({success: false, message :'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message :'Internal server error'})
     }
 }
 
@@ -193,10 +178,10 @@ const removeOffer = async (req, res) => {
         }
         //await Category.findByIdAndUpdate(categoryId, {categoryOffer: 0})
         
-        res.status(200).json({success: true, message :'Offer removed'})
+        res.status(STATUS.OK).json({success: true, message :'Offer removed'})
     } catch (error) {
         console.error('Error while removing offer', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 module.exports = {

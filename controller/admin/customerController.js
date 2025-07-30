@@ -1,6 +1,8 @@
 const Address = require('../../models/addressSchema')
 const User = require('../../models/userSchema')
 const Order = require('../../models/orderSchema')
+const STATUS =require('../../utils/statusCodes')
+
 //customer page
 const loadCustomers = async (req, res) => {
     try {
@@ -42,7 +44,7 @@ const loadCustomers = async (req, res) => {
         })
     } catch (error) {
         console.error('Error while loading user info', error)
-        res.status(500).json('Internal server error')
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json('Internal server error')
     }
     
 }

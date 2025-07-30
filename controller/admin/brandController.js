@@ -1,6 +1,7 @@
 const Brand = require('../../models/brandSchema')
 const Category = require('../../models/categorySchema')
 const cloudinary = require('../../utils/cloudinary')
+const STATUS =require('../../utils/statusCodes')
 const sharp = require('sharp')
 const path = require('path')
 const fs = require('fs')
@@ -36,33 +37,12 @@ const addBrand = async (req, res) => {
     try {
         const {brandName } = req.body
         if(!brandName || !req.file){
-            return res.status(400).json({error:'All fields are required'})
+            return res.status(STATUS.BAD_REQUEST).json({error:'All fields are required'})
         }
         const exixtingBrand = await Brand.findOne({brandName: {$regex: new RegExp(`^${brandName}$`, 'i')}})
         if(exixtingBrand){
-            return res.status(400).json({error: 'Brand already exists'})
+            return res.status(STATUS.BAD_REQUEST).json({error: 'Brand already exists'})
         }
-
-        // const filename = `brand_${Date.now()}.jpeg`
-        // const outputPath = path.join(__dirname,'../../public/images', filename)
-
-        // await sharp(req.file.buffer)
-        //       .resize(300, 300)
-        //       .jpeg({quality: 80})
-        //       .toFile(outputPath)
-
-        // const imageUrl = `/images/${filename}`
-        // console.log("req.file: ", req.file);
-
-        // const imageBase64 = `data:image/jpeg;base64,${req.file.buffer.toString('base64')}`
-
-        // const uploadResult = await cloudinary.uploader.upload(imageBase64, {
-        //     folder: 'yara-brands',
-        //     format:'jpeg',
-        //     transformation: [
-        //         {width: 300, height: 300, crop: 'fill'}
-        //     ]
-        // })
         const imageUrl = req.file.path
         const newBrand = new Brand({
             brandName,
@@ -71,10 +51,10 @@ const addBrand = async (req, res) => {
 
         await newBrand.save()
 
-        return res.status(200).json({message: 'Brand added successfully'})
+        return res.status(STATUS.OK).json({message: 'Brand added successfully'})
     } catch (error) {
         console.error('Error adding brand', error)
-        res.status(500).json({error: "Something went wrong while adding brand"})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({error: "Something went wrong while adding brand"})
     }
 }
 

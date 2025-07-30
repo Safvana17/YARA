@@ -7,6 +7,7 @@ const Order = require('../../models/orderSchema')
 const Notification = require('../../models/notificationSchema')
 const Coupon = require('../../models/couponSchema')
 const razorpayInstance = require('../../utils/razorpayInstance')
+const STATUS = require('../../utils/statusCodes')
 const puppeteer = require('puppeteer')
 const path = require('path')
 const ejs = require('ejs')
@@ -15,6 +16,8 @@ const Razorpay = require('razorpay')
 const crypto = require('crypto')
 const { count } = require('console')
 const mongoose = require('mongoose')
+
+
 //create razorpay order
 const createRazorpayOrder = async (req, res) => {
     try {
@@ -29,7 +32,7 @@ const createRazorpayOrder = async (req, res) => {
         res.json(order)
     } catch (error) {
         console.error("Razorpay order error", error)
-        res.status(500).json({success: false, message: 'Razorpay order creation failed'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Razorpay order creation failed'})
     }
 }
 
@@ -61,13 +64,13 @@ const verifyPayment = async (req, res) => {
               .digest('hex')
 
         if(generateSignature === razorpay_signature){
-            res.status(200).json({success: true})
+            res.status(STATUS.OK).json({success: true})
         }else{
-            res.status(400).json({ success: false, message: 'Payment verification failed'})
+            res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Payment verification failed'})
         }
     } catch (error) {
         console.error('Payment verification error', error)
-        res.status(500).json({ success: false, message: 'internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'internal server error'})
     }
 }
 
@@ -85,7 +88,7 @@ const placeOrder = async (req, res) => {
         const addressDoc = await Address.findOne({userId})
         const address = addressDoc?.address.id(selectedAddress)
         if(!address){
-            return res.status(404).json({success: false, message :'Address is not selected!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message :'Address is not selected!'})
         }
 
 
@@ -94,7 +97,7 @@ const placeOrder = async (req, res) => {
         const cartItems = cartDoc ?. items || []
 
         if(!cartItems.length){
-            return res.status(400).json({success: false, message: 'No items in the cart'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'No items in the cart'})
         }
 
         //console.log("Selected Address:", selectedAddress)
@@ -106,7 +109,7 @@ const placeOrder = async (req, res) => {
 
         for(let item of cartItems){
             if(item.quantity > item.variantId.stockQuantity){
-                return res.status(400).json({success: false, message :'Insuffiecient stock for some items'})
+                return res.status(STATUS.BAD_REQUEST).json({success: false, message :'Insuffiecient stock for some items'})
             }
 
             orderItems.push({
@@ -128,15 +131,11 @@ const placeOrder = async (req, res) => {
             appliedCoupon = req.session.appliedCoupon.couponId
             const objectUserId =new mongoose.Types.ObjectId(userId)
 
-            // await Coupon.findByIdAndUpdate(req.session.appliedCoupon.couponId, {
-            //     $inc: { count: 1},
-            //     $addToSet: { usedUsers: objectUserId}
-            // })
             const coupon = await Coupon.findById(appliedCoupon)
             if(coupon){
                 coupon.usedCount += 1
 
-                const userEntry = coupon.usedUsers.find(entry => entry.userId.toString() === userId.toString())
+                const userEntry = coupon.usedUsers.find(entry => entry?.userId.toString() === userId.toString())
                 
                 if(userEntry){
                     userEntry.count += 1
@@ -155,14 +154,13 @@ const placeOrder = async (req, res) => {
         if(payment === 'wallet'){
               console.log(' Entered wallet payment block')
             try{
-            const user = await User.findById(userId)
-            if(user.wallet < totalAmount) {
+              if(user.wallet < totalAmount) {
                   console.log(' Entered wallet payment block1')
-                return res.status(400).json({success: false, message: 'Insufficient wallet amount'})
-            }
+                return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Insufficient wallet amount'})
+              }
 
               console.log(' Entered wallet payment block2')
-            user.wallet -= totalAmount
+              user.wallet -= totalAmount
 
             //save wallet transaction
          user.walletTransaction.push({
@@ -181,7 +179,7 @@ const placeOrder = async (req, res) => {
 
         }catch(error){
            console.error('Error in wallet selection', error)
-           return res.status(500).json({success: false, message: ' wallet processing error'})
+           return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: ' wallet processing error'})
         }
     }
     
@@ -220,12 +218,12 @@ const placeOrder = async (req, res) => {
         cartDoc.items = []
         await cartDoc.save()
 
-        res.status(200).json({success: true, message: 'Order placed', orderId: newOrder._id, user})
+        res.status(STATUS.OK).json({success: true, message: 'Order placed', orderId: newOrder._id, user})
     } catch (error) {
-            console.error(' Error while making an order:', error.message);
-    console.error(error.stack);
+        console.error(' Error while making an order:', error.message);
+        console.error(error.stack);
         console.error('Error while making an order', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR ).json({success: false, message: 'Internal server error'})
     }
 
 }
@@ -239,13 +237,13 @@ const loadOrderSuccessPage = async (req, res) => {
         const orderId = req.params.id 
         const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
         if(!order){
-            return res.status(404).json({ success: false, message: 'Order not found'})
+            return res.status(STATUS.NOT_FOUND).json({ success: false, message: 'Order not found'})
         }
 
         res.render('order-success', { order, user })
     } catch (error) {
         console.error('Error while loading order success page', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -254,16 +252,11 @@ const loadOrderFailurePage = async (req, res) => {
     try {
         const userId = req.session.user 
         const user = await User.findById(userId)
-        // const orderId = req.params.id 
-        // const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
-        // if(!order){
-        //     return res.status(404).json({ success: false, message: 'Order not found'})
-        // }
 
         res.render('order-failed',{user} )
     } catch (error) {
         console.error('Error while loading order success page', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 //order details
@@ -274,7 +267,7 @@ const orderDetails = async (req, res) => {
 
         const order = await Order.findOne({_id: orderId, userId}).populate('orderItems.product orderItems.variant').lean()
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found'})
         }
         console.log(order)
         const user = await User.findById(userId)
@@ -295,7 +288,7 @@ const getAllOrders = async (req, res) => {
 
         const search = req.query.search || ''
         const page = parseInt(req.query.page) || 1
-        const limit = 5
+        const limit = 3
         const skip = (page - 1)*limit
         const orders = await Order.find({userId})
              .populate('orderItems.product orderItems.variant')
@@ -303,7 +296,7 @@ const getAllOrders = async (req, res) => {
              .skip(skip)
              .limit(limit)
 
-        const totalOrders = await Order.find({ userId })
+        const totalOrders = await Order.find({ userId }).countDocuments()
         const totalPages = Math.ceil( totalOrders / limit )
         const user = await User.findById(userId)
 
@@ -333,7 +326,7 @@ const getInvoice = async (req, res) => {
             return res.status(404).send('Order not found')
         }
         if(order.status !== 'Delivered'){
-            return res.status(400).send('Invoice is only available for delivered item!.')
+            return res.status(STATUS.BAD_REQUEST).send('Invoice is only available for delivered item!.')
         }
 
         console.log(order.orderItems[0].product.productImage[0])
@@ -384,7 +377,7 @@ const getInvoice = async (req, res) => {
         })
     } catch (error) {
         console.error('Error generating invoice', error)
-        res.status(500).send('Error generating invoice')
+        res.status(STATUS.INTERNAL_SERVER_ERROR).send('Error generating invoice')
     }
 }
 
@@ -398,10 +391,10 @@ const returnOrder = async (req, res) => {
         const user = await User.findById(userId)
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
         if(['returned'].includes(order.status)){
-             return res.status(400).json({success: false, message: 'Order Alredy returned.'})
+             return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order Alredy returned.'})
         }
 
         for(let item of order.orderItems){
@@ -416,10 +409,10 @@ const returnOrder = async (req, res) => {
             message: `Return requested for entire order (${orderId}) by ${user.name}`
         })
 
-        return res.status(200).json({success: true, message: 'Order return request submitted'})
+        return res.status(STATUS.OK).json({success: true, message: 'Order return request submitted'})
     } catch (error) {
         console.error('Error while cancelling order', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -433,11 +426,11 @@ const cancelOrder = async (req, res) => {
         const order = await Order.findOne({_id: orderId, userId})
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found'})
         }
 
         if(['Cancelled', 'Delivered'].includes(order.status)){
-            return res.status(400).json({success: false, message: 'Delivered order cannot be cancelled'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Delivered order cannot be cancelled'})
         }
 
         for(let item of order.orderItems){
@@ -470,10 +463,10 @@ const cancelOrder = async (req, res) => {
         }
 
 
-        res.status(200).json({success: true, message: 'Order cancelled!'})
+        res.status(STATUS.OK).json({success: true, message: 'Order cancelled!'})
     } catch (error) {
         console.error('Error while cancelling order', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -486,28 +479,28 @@ const applyCoupon = async (req, res) => {
         const coupon = await Coupon.findOne({code: code.toUpperCase(), status: true})
         console.log('coupons:', coupon)
         if(!coupon){
-            return res.status(400).json({success: false, message: 'Invalide coupon code'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Invalide coupon code'})
         }
 
         const now = new Date()
         if(now < coupon.startingDate || now > coupon.expiryDate){
-            return res.status(400).json({success: false, message: 'Coupon is not active'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Coupon is not active'})
         }
 
         
         if( coupon.usedCount >= coupon.usageLimit){
-            return res.status(400).json({success: false, message: `Coupon usage limite exceeded`})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: `Coupon usage limite exceeded`})
         }
 
         const userUsage = coupon.usedUsers.find(entry => entry.userId?.toString() === userId)
         const userUsedCount = userUsage ? userUsage.count : 0
         if(userUsedCount >= coupon.usagePerUser){
-            return res.status(400).json({success: false, message: `you already used this coupon ${coupon.usagePerUser} times`})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: `you already used this coupon ${coupon.usagePerUser} times`})
         }
 
         const cartTotal = req.session.cartTotal 
         if(cartTotal < coupon.minOrderAmount){
-            return res.status(400).json({success: false, message: `Minimum order ₹${coupon.minOrderAmount}`})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: `Minimum order ₹${coupon.minOrderAmount}`})
         }
 
         const discount = coupon.type === 'percentage' ? Math.floor(cartTotal * coupon.value / 100) : coupon.value
@@ -518,21 +511,21 @@ const applyCoupon = async (req, res) => {
             discount,
             couponId: coupon._id 
         }
-        res.status(200).json({discount, newTotal})
+        res.status(STATUS.OK).json({discount, newTotal})
 
     } catch (error) {
         console.error('Error while applying coupon', error)
-        res.status(500).json({message: 'Something went wrong'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({message: 'Something went wrong'})
     }
 }
 //remove coupon 
 const deleteCoupon = async (req, res) => {
     try {
         delete req.session.appliedCoupon
-        res.sendStatus(200)
+        res.sendStatus(STATUS.OK)
     } catch (error) {
         console.error('Error while deleting coupon', error)
-        res.sendStatus(500)
+        res.sendStatus(STATUS.INTERNAL_SERVER_ERROR)
     }
 }
 
@@ -547,16 +540,16 @@ const deleteItemOrder = async (req, res) => {
 
         const order = await Order.findById(orderId)
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
 
         const item = await order.orderItems.id(itemId)
         if(!item){
-            return res.status(404).json({success: false, message: 'Item not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Item not found!'})
         }
 
         if (item.itemStatus === 'Cancelled' || item.itemStatus === 'Returned') {
-            return res.status(400).json({ success: false, message: 'Item already cancelled or returned.' });
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Item already cancelled or returned.' });
         }
 
         await ProductVariant.findByIdAndUpdate(item.variant,{
@@ -589,10 +582,10 @@ const deleteItemOrder = async (req, res) => {
         order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
         await order.save();
 
-        res.status(200).json({success: true, message: 'Order cancelled'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: true, message: 'Order cancelled'})
     } catch (error) {
         console.error('Error while cancelling item from order', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -606,16 +599,12 @@ const returnItemOrder = async (req, res) => {
         const user = await User.findById(userId)
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
         const item = await order.orderItems.id(itemId)
         if(['returned'].includes(item.itemStatus)){
-             return res.status(400).json({success: false, message: 'Order Alredy returned.'})
+             return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order Alredy returned.'})
         }
-
-    //    await ProductVariant.findByIdAndUpdate(item.variant, {
-    //     $inc: {stockQuantity: item.quantity}
-    //    })
 
         item.itemStatus = 'Return Request'
         item.itemCancelReason = reason
@@ -633,10 +622,10 @@ const returnItemOrder = async (req, res) => {
             message: `Return requested for item (${product.name}) in order ${orderId.slice(-6)} by ${user.name}`
         })
 
-        return res.status(200).json({success: true, message: 'Order return request submitted'})
+        return res.status(STATUS.OK).json({success: true, message: 'Order return request submitted'})
     } catch (error) {
         console.error('Error while cancelling order', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 

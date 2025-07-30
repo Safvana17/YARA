@@ -377,7 +377,7 @@ function previewImage(event, index){
             nameError.textContent = 'Product name is require (must be atleast 4 characters)'
             isValid = false
         }
-        if(!/^[a-zA-Z\s]+$/.test(name)){
+        if(!/^[a-zA-Z\s\-']+$/.test(name)){
             nameError.textContent = 'Name can include only alphabetic characters'
             isValid = false
         }

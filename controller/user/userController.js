@@ -4,6 +4,7 @@ const Product = require('../../models/productSchema')
 const Brand = require('../../models/brandSchema')
 const Order = require('../../models/orderSchema')
 const Banner = require('../../models/bannerSchema')
+const STATUS = require('../../utils/statusCodes')
 const bcrypt = require('bcrypt')
 const nodemailer = require('nodemailer')
 const env = require('dotenv')
@@ -18,6 +19,8 @@ function generateReferralCodeFromName(name){
 
     return `YR${namePart}${randomDigits}`
 }
+
+
 //sign up page
 const loadSignup = async (req, res) => {
     try {
@@ -27,6 +30,8 @@ const loadSignup = async (req, res) => {
         req.redirect('/pageNotFound')
     }
 }
+
+
 //otp
 function generateOtp(){
     const digits = "1234567890"
@@ -36,6 +41,8 @@ function generateOtp(){
     }
     return otp
 }
+
+//send OTP
 async function sentOtpMail(otp, email){
   try{
      const transporter = nodemailer.createTransport({
@@ -60,6 +67,8 @@ async function sentOtpMail(otp, email){
         console.error("error sending otp", error)
     }
 }
+
+
 //sign up
 const signup = async (req, res) => {
     try {
@@ -98,14 +107,16 @@ const securePassword = async(password) =>{
         console.error("Error while hashing password", error)
     }
 }
+
+
 //verify otp
 const verifyOtp = async (req, res) => {
     try {
         const {otp} = req.body
         console.log("Entered otp is:",otp)
-        const otpAge = req.session.otpCreatedAt - Date.now()
+        const otpAge = Date.now () - req.session.otpCreatedAt 
         if(otpAge > 1 * 60 * 1000){
-            return res.status(400).json({success: false, message: "OTP Expired, please request new one"})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: "OTP Expired, please request new one"})
         }
         if(otp === req.session.otp){
             const user = req.session.userData
@@ -117,24 +128,7 @@ const verifyOtp = async (req, res) => {
                 const existing = await User.findOne({ referalCode: referralcode})
                 if(!existing) isUnique = true
             }
-            
-            //         if(user.referralCode){
-            // const referrer = await User.findOne({ referalCode: user.referralCode})
-            // if(referrer) referredBy = referrer._id
 
-            // //credit 50
-            // referrer.wallet += 50
-            // referrer.walletTransaction.push({
-            //     amount: 50,
-            //     status: 'credited',
-            //     method: 'reward',
-            //     description: `Referral reward for inviting ${user.name}`
-            // })
-            // referrer.redeemedUsers.push(newUser?._id)
-
-            // await referrer.save()
-            // }
-           //const user = req.session.userData
            const passHash = await securePassword(user.password)
            const newUser = new User({
             name: user.name,
@@ -152,9 +146,10 @@ const verifyOtp = async (req, res) => {
             if(referrer) referredBy = referrer
 
             //credit 50
-            referrer.wallet += 50
+            referrer.wallet += 100
+           
             referrer.walletTransaction.push({
-                amount: 50,
+                amount: 100,
                 status: 'credited',
                 method: 'reward',
                 description: `Referral reward for inviting ${user.name}`
@@ -162,24 +157,37 @@ const verifyOtp = async (req, res) => {
             referrer.redeemedUsers.push(newUser?._id)
 
             await referrer.save()
+
+            newUser.wallet += 50
+            newUser.walletTransaction.push({
+                amount: 50,
+                status: 'credited',
+                method: 'reward',
+                description: `Referral bonus for using ${referrer.name}'s code`
+            })
             }
+
+            await newUser.save()
+            
            req.session.user = newUser._id
-           res.status(200).json({success: true, redirectUrl: "/login"})
+           res.status(STATUS.OK).json({success: true, redirectUrl: "/login"})
         }else{
-            res.status(500).json({success:false, message: "Invalid OTP, Please try again later"})
+            res.status(STATUS.INTERNAL_SERVER_ERROR).json({success:false, message: "Invalid OTP, Please try again later"})
         }
         
     } catch (error) {
         console.error("Error verifying OTP",error)
-        res.status(500).json({success: false, message: "Internal server error"})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: "Internal server error"})
     }
 }
+
+
 //resend otp
 const resendOTP = async (req, res) => {
     try {
         const {email} = req.session.userData
         if(!email){
-            res.status(400).json({success: false, message:"Email not found"})
+            res.status(STATUS.BAD_REQUEST).json({success: false, message:"Email not found"})
         }
         const otp = generateOtp()
         req.session.otp = otp
@@ -187,13 +195,13 @@ const resendOTP = async (req, res) => {
         console.log('resend otp:',otp)
         if(emailsent){
             req.session.otpCreatedAt = Date.now()
-           res.status(200).json({success: true, message: "OTP Resend successfully"})
+           res.status(STATUS.OK).json({success: true, message: "OTP Resend successfully"})
         }else{
-            res.status(500).json({success: false, message:"Failed to resend otp, please try again"})
+            res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message:"Failed to resend otp, please try again"})
         }
     } catch (error) {
         console.error("Error occured while resend OTP", error)
-        res.status(500).json({success: false, message: "Internal server error"})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: "Internal server error"})
     }
 }
 
@@ -341,6 +349,7 @@ const pageNotFound = async (req, res) => {
     }
 }
 
+
 const loadShoppingPage = async (req, res) => {
     try {
         const user = req.session.user
@@ -419,63 +428,6 @@ const loadShoppingPage = async (req, res) => {
 }
 
 
-// const searchProducts = async (req, res) => {
-//     try {
-//         const user = req.session.user;
-//         const userData = await User.findOne({ _id: user });
-
-//         let search = req.query.query || ''
-
-//         // Fetch only unblocked brands
-//         const brands = await Brand.find({ isBlocked: false }).lean();
-//         const allowedBrandNames = brands.map(b => b.brandName);
-
-//         const categories = await Category.find({ isListed: true }).lean();
-//         const categoryIds = categories.map(category => category._id.toString());
-
-//         let searchResult = [];
-
-//         // If session already has filtered products
-//         if (req.session.filteredProducts && req.session.filteredProducts.length > 0) {
-//             searchResult = req.session.filteredProducts.filter(product =>
-//                 product.productName.toLowerCase().includes(search.toLowerCase()) &&
-//                 allowedBrandNames.includes(product.brand)
-//             );
-//         } else {
-//             searchResult = await Product.find({
-//                 productName: { $regex: ".*" + search + ".*", $options: "i" },
-//                 isBlocked: false,
-//                 quantity: { $gt: 0 },
-//                 category: { $in: categoryIds },
-//                 brand: { $in: allowedBrandNames }
-//             }).lean();
-//         }
-
-//         // Sort and paginate
-//         searchResult.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-//         const itemsPerPage = 6;
-//         const currentPage = parseInt(req.query.page) || 1;
-//         const startIndex = (currentPage - 1) * itemsPerPage;
-//         const endIndex = startIndex + itemsPerPage;
-//         const totalPages = Math.ceil(searchResult.length / itemsPerPage);
-//         const currentProduct = searchResult.slice(startIndex, endIndex);
-
-//         return res.render("shop", {
-//             user: userData,
-//             products: currentProduct,
-//             category: categories,
-//             brand: brands,
-//             totalPages,
-//             currentPage,
-//             count: searchResult.length,
-//         });
-
-//     } catch (error) {
-//         console.log("Error in searchProducts:", error);
-//         return res.redirect("/pagenotfound");
-//     }
-// };
 module.exports = {
     loadSignup,
     loadHome,

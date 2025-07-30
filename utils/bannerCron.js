@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const Banner = require('../models/bannerSchema')
 
-// Runs every day at midnight
+
 cron.schedule('*/5 * * * *', async () => {
   try {
     const now = new Date();
