@@ -192,8 +192,10 @@ const getInvoice = async (req, res) => {
 const approveReturnRequest = async (req, res) => {
     try {
         const orderId = req.params.id 
-        const order = await Order.findById(orderId)
-        const user = await User.findById(order.userId._id)
+        const [order, user] = await Promise.all([ 
+            Order.findById(orderId),
+            User.findById(order.userId._id)
+        ])
 
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
@@ -271,9 +273,12 @@ const approveItemReturnRequest = async (req, res) => {
     try {
         const {orderId, itemId} = req.params
         console.log("Route Params:", req.params);
-        const order = await Order.findById(orderId)
-        const user = await User.findById(order.userId._id)
 
+        const [order, user] = await Promise.all([ 
+            Order.findById(orderId),
+            User.findById(order.userId._id)
+        ])
+        
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }

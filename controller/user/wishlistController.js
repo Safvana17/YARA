@@ -9,9 +9,11 @@ const STATUS = require('../../utils/statusCodes')
 const loadWishlist = async (req, res) => {
     try {
         const userId = req.session.user 
-        const user = await User.findById(userId)
+        const [user, products] = await Promise.all([ 
+            User.findById(userId),
+            Product.find({_id: {$in: user.wishlist}}).populate('category')
+        ])
 
-        const products = await Product.find({_id: {$in: user.wishlist}}).populate('category')
         const productId = products.map(p => p._id)
       
  
@@ -97,8 +99,10 @@ const addToCartFromWishlist = async (req, res) => {
 
     console.log('BODY', req.body)
 
-    const product = await Product.findById(productId)
-    const variant = await ProductVariant.findById(variantId)
+    const [product, variant ] = await Promise.all([ 
+        Product.findById(productId),
+        ProductVariant.findById(variantId)
+    ])
 
     if(!product || !variant){
         return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product or variant not found'})

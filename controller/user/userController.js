@@ -209,48 +209,48 @@ const resendOTP = async (req, res) => {
 const loadHome = async (req, res) => {
     try {
         const userId = req.session.user
-
         const categories = await Category.find({isListed: true})
-        const brands = await Brand.find({isBlocked: false})
-        const trendingProducts = await Order.aggregate([
-            {$unwind: '$orderItems'},
-            {
-                $group: {
-                    _id: '$orderItems.product',
-                    totalQty: {$sum: '$orderItems.quantity'}
+        const [brands, trendingProducts, latestProduct, activeBanner ] = await Promise.all([ 
+            Brand.find({isBlocked: false}),
+            Order.aggregate([
+                {$unwind: '$orderItems'},
+                {
+                    $group: {
+                        _id: '$orderItems.product',
+                        totalQty: {$sum: '$orderItems.quantity'}
+                    }
+                },
+                {$sort: {totalQty: -1 } },
+                
+                {
+                    $lookup: {
+                        from: 'products',
+                        foreignField: "_id",
+                        localField: "_id",
+                        as: 'product'
+                    }
+                },
+                {$unwind: '$product'},
+                {$match: {'product.isBlocked': false}},
+                {$limit: 12},
+                {
+                    $project: {
+                        _id: '$product._id',
+                        name: '$product.name',
+                        productImage: '$product.productImage',
+                        salePrice: '$product.salePrice',
+                        // totalQty: 1
+                    }
                 }
-            },
-            {$sort: {totalQty: -1 } },
-            
-            {
-                $lookup: {
-                    from: 'products',
-                    foreignField: "_id",
-                    localField: "_id",
-                    as: 'product'
-                }
-            },
-            {$unwind: '$product'},
-            {$match: {'product.isBlocked': false}},
-            {$limit: 12},
-            {
-                $project: {
-                    _id: '$product._id',
-                    name: '$product.name',
-                    productImage: '$product.productImage',
-                    salePrice: '$product.salePrice',
-                    // totalQty: 1
-                }
-            }
+            ]),
+            Product.find({
+                isBlocked: false,
+                category: {$in: categories.map(c => c._id)}
+            })
+            .sort({ createdAt: -1})
+            .limit(12),
+            Banner.find({isActive: true}).sort({startDate: -1})
         ])
-        const latestProduct = await Product.find({
-            isBlocked: false,
-            category: {$in: categories.map(c => c._id)}
-        })
-        .sort({ createdAt: -1})
-        .limit(12)
-        
-        const activeBanner = await Banner.find({isActive: true}).sort({startDate: -1})
         console.log(activeBanner)
 
         if(userId){
@@ -355,10 +355,12 @@ const loadShoppingPage = async (req, res) => {
         const user = req.session.user
         const userData = await User.findOne({_id: user})
 
-        const categories = await Category.find({ isListed: true})
-        const categoryIds = categories.map((category)=> category._id.toString())
+        const [categories, brands ] = await Promise.all([ 
+            Category.find({ isListed: true}),
+            Brand.find({isBlocked: false})
+        ])
 
-        const brands = await Brand.find({isBlocked: false})
+        const categoryIds = categories.map((category)=> category._id.toString())
         const brandNames = brands.map((brand) => brand.brandName)
 
         const {category, brand, gt, lt, page = 1, sortBy, query} = req.query

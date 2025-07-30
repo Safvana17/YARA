@@ -363,17 +363,22 @@ const getAddressPage = async (req, res) => {
         const limit = 1
         const skip = (page -1)*limit
         const userId = req.session.user
-        const user = await User.findById(userId)
-        const addressData = await Address.findOne({userId})
-              .skip(skip)
-              .limit(limit)
-        // const count = await Address.find({userId}).countDocuments()
-        const count = addressData?.address.length
+
+        const [user, addressData] = await Promise.all([ 
+            User.findById(userId),
+            Address.findOne({userId})
+        ])
+        
+        const allAddress = addressData?.address || []
+
+        const count = allAddress.length
         const totalPages = Math.ceil(count / limit)
+
         console.log('toatalPages:', totalPages)
+        const paginatedAddress = allAddress.slice(skip, skip + limit)
         res.render('user-address',{
             user,
-            addressData,
+            addressData:{address: paginatedAddress},
             search,
             totalPages,
             currentPage: page

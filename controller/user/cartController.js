@@ -96,8 +96,10 @@ const addToCart = async (req, res) => {
     const userId = req.session.user
     const {productId, variantId} = req.body
 
-    const product = await Product.findById(productId)
-    const variant = await ProductVariant.findById(variantId)
+    const [product, variant] = await Promise.all([ 
+        Product.findById(productId),
+        ProductVariant.findById(variantId)
+    ])
 
     if(!product || !variant){
         return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product or variant not found'})

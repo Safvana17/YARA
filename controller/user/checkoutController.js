@@ -11,10 +11,12 @@ const STATUS = require('../../utils/statusCodes')
 const loadCheckout = async (req, res) => {
     try {
         const userId = req.session.user 
-        const user = await User.findById(userId)
-        const addressDoc = await Address.findOne({userId}) 
-        const addresses = addressDoc ?. address || []
+        const [user, addressDoc] = await Promise.all([ 
+            User.findById(userId),
+            Address.findOne({userId}) 
+        ])
 
+        const addresses = addressDoc ?. address || []
         const selectedAddress = addresses.find(addr => addr.isDefault === true)
 
         const cartDoc = await Cart.findOne({userId}).populate('items.productId items.variantId')

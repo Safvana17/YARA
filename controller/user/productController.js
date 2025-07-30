@@ -8,12 +8,14 @@ const STATUS = require('../../utils/statusCodes')
 const productDetails = async (req, res) => {
     try {
         const userId = req.session.user
-        const userData = await User.findById(userId)
         const productId = req.query.id 
-        const productData = await Product.findById(productId).populate('category').populate('brand')
-        const category = productData.category
-        const productVariant = await ProductVariant.find({productId: productId})
 
+        const [userData, productData, ProductVariant] = await Promise.all([ 
+            User.findById(userId),
+            Product.findById(productId).populate('category').populate('brand'),
+            ProductVariant.find({productId: productId})
+        ])
+        const category = productData.category
         if(productData.isBlocked){
             res.redirect('/')
         }

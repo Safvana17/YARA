@@ -79,13 +79,18 @@ const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user 
         const {selectedAddress, payment} = req.body
-        const user = await User.findById(userId)
+        // const user = await User.findById(userId)
 
-        console.log('REQ.BODY:', req.body)
+        // console.log('REQ.BODY:', req.body)
 
 
-        //get address data
-        const addressDoc = await Address.findOne({userId})
+        // //get address data
+        // const addressDoc = await Address.findOne({userId})
+        const [user, addressDoc] = await Promise.all([
+            User.findById(userId),
+            Address.findOne({userId})
+        ])
+
         const address = addressDoc?.address.id(selectedAddress)
         if(!address){
             return res.status(STATUS.NOT_FOUND).json({success: false, message :'Address is not selected!'})
@@ -233,9 +238,13 @@ const placeOrder = async (req, res) => {
 const loadOrderSuccessPage = async (req, res) => {
     try {
         const userId = req.session.user 
-        const user = await User.findById(userId)
         const orderId = req.params.id 
-        const order = await Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
+
+        const [user, order] = await Promise.all([
+            User.findById(userId),
+            Order.findOne({_id: orderId}).populate('orderItems.product orderItems.variant')
+        ])
+
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({ success: false, message: 'Order not found'})
         }
@@ -265,12 +274,16 @@ const orderDetails = async (req, res) => {
         const userId = req.session.user 
         const orderId = req.params.id 
 
-        const order = await Order.findOne({_id: orderId, userId}).populate('orderItems.product orderItems.variant').lean()
+        const [user, order] = await Promise.all([
+            User.findById(userId),
+            Order.findOne({_id: orderId, userId}).populate('orderItems.product orderItems.variant').lean()
+        ])
+
+       
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found'})
         }
         console.log(order)
-        const user = await User.findById(userId)
         res.render('order-details', {
             user,
             order
@@ -290,15 +303,19 @@ const getAllOrders = async (req, res) => {
         const page = parseInt(req.query.page) || 1
         const limit = 3
         const skip = (page - 1)*limit
-        const orders = await Order.find({userId})
-             .populate('orderItems.product orderItems.variant')
-             .sort({ createdAt : -1 })
-             .skip(skip)
-             .limit(limit)
+
+        const [user, order] = await Promise.all([
+            User.findById(userId),
+            Order.find({userId})
+                .populate('orderItems.product orderItems.variant')
+                .sort({ createdAt : -1 })
+                .skip(skip)
+                .limit(limit)
+        ])
 
         const totalOrders = await Order.find({ userId }).countDocuments()
         const totalPages = Math.ceil( totalOrders / limit )
-        const user = await User.findById(userId)
+    
 
         res.render('orders', {
             orders: orders,
@@ -387,8 +404,11 @@ const returnOrder = async (req, res) => {
         const userId = req.session.user
         const {reason } = req.body
         const orderId = req.params.id
-        const order = await Order.findOne({_id: orderId, userId})
-        const user = await User.findById(userId)
+
+        const [user, order] = await Promise.all([
+            User.findById(userId),
+            Order.findOne({_id: orderId, userId})
+        ])
 
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
@@ -422,8 +442,11 @@ const cancelOrder = async (req, res) => {
         const userId = req.session.user
         const {reason} = req.body
         const orderId = req.params.id
-        const user = await User.findById(userId)
-        const order = await Order.findOne({_id: orderId, userId})
+
+        const [user, order] = await Promise.all([
+            User.findById(userId),
+            Order.findOne({_id: orderId, userId})
+        ])
 
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found'})
@@ -536,9 +559,11 @@ const deleteItemOrder = async (req, res) => {
         const {orderId, itemId} = req.params
         const {reason} = req.body
 
-        const user = await User.findById(userId)
+        const [user, order ] = await Promise.all([
+               User.findById(userId),
+               Order.findById(orderId)
+        ])
 
-        const order = await Order.findById(orderId)
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
@@ -595,9 +620,11 @@ const returnItemOrder = async (req, res) => {
         const userId = req.session.user
         const {reason } = req.body
         const {orderId, itemId} = req.params
-        const order = await Order.findOne({_id: orderId, userId})
-        const user = await User.findById(userId)
-
+        const [order, user ] = await Promise.all([
+            Order.findOne({_id: orderId, userId}),
+            User.findById(userId)
+        ])
+        
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }

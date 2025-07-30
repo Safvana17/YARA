@@ -83,15 +83,9 @@ const getDashboardData = async (req, res) => {
             }
         }
 
-
-        const salesChart = await Order.aggregate([
-            {$match: matchStage},
-            {$group: groupStage},
-            {$sort: {"_id.year":1, "_id.month": 1, "_id.day": 1, "_id.week": 1}}
-        ])
-
         //best selling product
-        const bestProducts = await Order.aggregate([
+        const [bestProducts, bestCategories, bestBrands] = await Promise.all([ 
+            Order.aggregate([
             {$unwind: '$orderItems'},
             {$group: {
                 _id: '$orderItems.product',
@@ -110,10 +104,10 @@ const getDashboardData = async (req, res) => {
             },
             {$unwind: '$product'},
             {$project: {name: '$product.name', totalQty: 1}}
-        ])
+        ]),
 
         //best selling categories
-        const bestCategories = await Order.aggregate([
+        Order.aggregate([
             {$unwind: '$orderItems'},
             {
                 $lookup: {
@@ -142,10 +136,10 @@ const getDashboardData = async (req, res) => {
             },
             {$unwind: '$category'},
             {$project: {name: '$category.name', totalQty: 1}}
-        ])
+        ]),
 
         //best selling brands
-        const bestBrands = await Order.aggregate([
+        Order.aggregate([
             {$unwind: '$orderItems'},
             {
                 $lookup: {
@@ -175,11 +169,12 @@ const getDashboardData = async (req, res) => {
             {$unwind: '$brand'},
             {$project: {name: '$brand.brandName', totalQty: 1}}
         ])
-
+    ])
 
         
      // Totals
-       const totalOrdersAgg = await Order.aggregate([
+       const [totalOrdersAgg, totalRevenueAgg, cancelledCount, returnedCount ]= await Promise.all([ 
+        Order.aggregate([
             { $match: matchAllStage }, 
             {
                 $group: {
@@ -187,12 +182,8 @@ const getDashboardData = async (req, res) => {
                 totalOrders: { $sum: 1 }
                 }
             }
-        ]);
-
-        const totalOrders = totalOrdersAgg[0]?.totalOrders || 0;
-
-
-        const totalRevenueAgg = await Order.aggregate([
+        ]),
+        Order.aggregate([
         {
             $match: {
             status: { $nin: ['Cancelled', 'Returned'] }, // Skip fully refunded orders
@@ -205,26 +196,27 @@ const getDashboardData = async (req, res) => {
             totalRevenue: { $sum: '$finalAmount' }
             }
         }
-        ]);
-
-        const totalRevenue = totalRevenueAgg[0]?.totalRevenue || 0;
-
-
-    // const totalCancels = await Order.countDocuments({ ...matchAllStage, status: 'Cancelled' });
-    const cancelledCount = await Order.aggregate([
-        
-        {$unwind: '$orderItems'},
-        {$match: {'orderItems.itemStatus': 'Cancelled' ,...dateFilter}},
-        {$count: 'totalCancels'}
-    ])
-    const returnedCount = await Order.aggregate([
-        {$unwind: '$orderItems'},
-        {$match: {'orderItems.itemStatus': 'Returned', ...dateFilter}},
-        {$count: 'totalReturns'}
+        ]),
+        Order.aggregate([        
+            {$unwind: '$orderItems'},
+            {$match: {'orderItems.itemStatus': 'Cancelled' ,...dateFilter}},
+            {$count: 'totalCancels'}
+        ]),
+        Order.aggregate([
+            {$unwind: '$orderItems'},
+            {$match: {'orderItems.itemStatus': 'Returned', ...dateFilter}},
+            {$count: 'totalReturns'}
+        ])
     ])
 
+    const [salesChart, orderStatus] = await Promise.all([ 
+        Order.aggregate([
+            {$match: matchStage},
+            {$group: groupStage},
+            {$sort: {"_id.year":1, "_id.month": 1, "_id.day": 1, "_id.week": 1}}
+        ]),
         //status for pie chart
-        const orderStatus = await Order.aggregate([
+        Order.aggregate([
             {$unwind: '$orderItems'},
             {
                 
@@ -234,10 +226,12 @@ const getDashboardData = async (req, res) => {
                 }
             }
         ])
-
-
+    ])
+        const totalOrders = totalOrdersAgg[0]?.totalOrders || 0
+        const totalRevenue = totalRevenueAgg[0]?.totalRevenue || 0
         const totalCancels = cancelledCount[0]?.totalCancels || 0
         const totalReturns = returnedCount[0]?.totalReturns || 0
+
         res.json({
             totalCancels,
             totalOrders,

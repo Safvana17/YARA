@@ -64,13 +64,19 @@ const LoadProducts = async (req, res) => {
 //get add product page
 const getAddProducts = async (req, res) => {
     try {
-        const category = await Category.find({isListed: true})
-        const brand = await Brand.find({isBlocked: false})
+
+        const [category, brand ] = await Promise.all([ 
+            Category.find({isListed: true}),
+            Brand.find({isBlocked: false})
+        ])
+
         res.render('product-add', {
             category,
             brand
         })
+
     } catch (error) {
+
         console.error('Error while loading add product page', error)
         res.redirect('/admin/pageerror')
     }
@@ -187,10 +193,13 @@ const unblockProduct = async (req, res) => {
 const getEditProduct = async (req, res) => {
     try {
         const id = req.params.id
-        const product = await Product.findOne({_id: id}).populate('category')
-        const category = await Category.find({})
-        const brand = await Brand.find({isBlocked: false})
-        const variants = await ProductVariant.find({productId: id}).lean()
+
+        const [product, category, brand, variant] = await Promise.all([ 
+            Product.findOne({_id: id}).populate('category'),
+            Category.find({}),
+            Brand.find({isBlocked: false}),
+            ProductVariant.find({productId: id}).lean()
+        ])
 
         if(!product){
             return res.status(STATUS.NOT_FOUND).send('Product not found')
@@ -269,56 +278,56 @@ const editProduct = async (req, res) => {
         await product.save()
 
 
-        const submittedVariants = Array.isArray(req.body.variants) 
-    ? req.body.variants 
-    : Object.values(req.body.variants);  // handle if sent as object
+            const submittedVariants = Array.isArray(req.body.variants) 
+        ? req.body.variants 
+        : Object.values(req.body.variants);  // handle if sent as object
 
-const existingVariants = await ProductVariant.find({ productId: productId }).lean();
+    const existingVariants = await ProductVariant.find({ productId: productId }).lean();
 
-const existingMap = new Map();
-existingVariants.forEach(v => {
-    existingMap.set(v._id.toString(), v);
-});
+    const existingMap = new Map();
+    existingVariants.forEach(v => {
+        existingMap.set(v._id.toString(), v);
+    });
 
-const submittedMap = new Map();
-const toInsert = [];
-const toUpdate = [];
+    const submittedMap = new Map();
+    const toInsert = [];
+    const toUpdate = [];
 
-for (let variant of submittedVariants) {
-    const isNew = !variant._id;
+    for (let variant of submittedVariants) {
+        const isNew = !variant._id;
 
-    if (isNew) {
-        // Insert new variant
-        toInsert.push({
-            productId: productId,
-            sku: variant.sku,
-            size: variant.size,
-            // salePrice: variant.price,
-            stockQuantity: variant.stock
-        });
-    } else {
-        const existing = existingMap.get(variant._id);
-        if (!existing) continue;
-
-        submittedMap.set(variant._id, true);
-
-        // Check if fields differ before updating
-        if (
-            existing.sku !== variant.sku ||
-            existing.size !== variant.size ||
-            // existing.salePrice !== parseFloat(variant.price) ||
-            existing.stockQuantity !== parseInt(variant.stock)
-        ) {
-            toUpdate.push({
-                _id: variant._id,
+        if (isNew) {
+            // Insert new variant
+            toInsert.push({
+                productId: productId,
                 sku: variant.sku,
                 size: variant.size,
                 // salePrice: variant.price,
                 stockQuantity: variant.stock
             });
+        } else {
+            const existing = existingMap.get(variant._id);
+            if (!existing) continue;
+
+            submittedMap.set(variant._id, true);
+
+            // Check if fields differ before updating
+            if (
+                existing.sku !== variant.sku ||
+                existing.size !== variant.size ||
+                // existing.salePrice !== parseFloat(variant.price) ||
+                existing.stockQuantity !== parseInt(variant.stock)
+            ) {
+                toUpdate.push({
+                    _id: variant._id,
+                    sku: variant.sku,
+                    size: variant.size,
+                    // salePrice: variant.price,
+                    stockQuantity: variant.stock
+                });
+            }
         }
     }
-}
 
 // Execute DB ops
 for (let updateVariant of toUpdate) {
@@ -357,6 +366,7 @@ function extractCloudinaryPublicId(url) {
         return null;
     }
 }
+
 //delete single image
 const deleteSingleImage = async (req, res) => {
     try {

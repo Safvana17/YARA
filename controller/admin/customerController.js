@@ -82,16 +82,17 @@ const customerInfo = async (req, res) => {
         const page = parseInt(req.query.page) || 1
         const search = req.query.search || ''
         const skip = (page-1)*limit
-        const user = await User.findById(id)
-        const addressData = await Address.findOne({userId: id}).lean()
-        const orders = await Order.find({userId: id})
+        const [user, addressData, orders, count ] = await Promise.all([ 
+            User.findById(id),
+            Address.findOne({userId: id}).lean(),
+            Order.find({userId: id})
               .populate('orderItems.product orderItems.variant')
               .sort({createdAt: -1})
               .lean()
               .skip(skip)
-              .limit(limit)
-
-        const count = await Order.find({userId: id}).countDocuments()
+              .limit(limit),
+            Order.find({userId: id}).countDocuments()
+        ])
         const totalPages = Math.ceil( count / limit )
         // console.log('address:',addressData, 'orders:',orders, 'user:',user)
         res.render('customerinfo',{
