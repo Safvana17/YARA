@@ -1,12 +1,18 @@
 const User = require('../../models/userSchema')
 const razorpayInstance = require('../../utils/razorpayInstance')
+const STATUS = require('../../utils/statusCodes')
 const Razorpay = require('razorpay')
 const crypto = require('crypto')
 
 const loadWalletPage = async (req, res) => {
     try {
+        const page = req.query.page || 1
+        const search = req.query.search || ''
+        const limit = 5
+        const skip = (page - 1)*limit
         const userId = req.session.user 
         const user = await User.findById(userId)
+        
         res.render('wallet', { user})
     } catch (error) {
         console.error('Error while loading wallet page', error)
@@ -41,7 +47,7 @@ const addMoneyWallet = async (req, res) => {
         res.json(order)
     } catch (error) {
         console.error('Error creating razorpay order', error)
-        res.status(500).json({success: false, message: 'Failed to create order'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Failed to create order'})
     }
 }
 
@@ -71,11 +77,11 @@ const verifyWalletPayment = async (req, res) => {
 
             return res.json({success: true})
         }else{
-            return res.status(400).json({ success: false, message: 'Inavalid signature'})
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Inavalid signature'})
         }
     } catch (error) {
         console.error('wallet payment verification error', error)
-        res.status(500).json({success: false, message: 'verification error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'verification error'})
     }
 }
 module.exports = {

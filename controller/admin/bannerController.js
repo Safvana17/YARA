@@ -1,5 +1,5 @@
 const Banner = require('../../models/bannerSchema')
-
+const STATUS =require('../../utils/statusCodes')
 
 //get banner page
 const loadBnnerPage = async (req, res) => {

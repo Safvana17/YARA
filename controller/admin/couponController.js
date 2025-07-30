@@ -1,5 +1,6 @@
 const Coupon = require('../../models/couponSchema')
 const User = require('../../models/userSchema')
+const STATUS =require('../../utils/statusCodes')
 
 const loadCouponPage = async (req, res) => {
     try {
@@ -43,7 +44,7 @@ const addCoupon = async (req, res) => {
         const {code, type, value, minOrderAmount, usageLimit, usagePerUser, startingDate, expiryDate, status } = req.body
         const existing = await Coupon.findOne({code: code.toUpperCase()})
         if(existing){
-            return res.status(400).json({success: false, message: 'Coupon already existing'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Coupon already existing'})
         }
 
         const newCoupon = new Coupon({
@@ -60,10 +61,10 @@ const addCoupon = async (req, res) => {
 
         await newCoupon.save()
 
-        res.status(200).json({success: true, message: 'Coupon added successfully'})
+        res.status(STATUS.OK).json({success: true, message: 'Coupon added successfully'})
     } catch (error) {
         console.error('Error while adding coupon', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -73,7 +74,7 @@ const getEditPage = async (req, res) => {
         const couponId = req.params.id 
         const coupon = await Coupon.findById(couponId)
         if(!coupon){
-            return res.status(404).json({success: false, message: 'Coupon not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Coupon not found!'})
         }
         res.render('edit-coupon',{coupon})
     } catch (error) {
@@ -90,7 +91,7 @@ const editCoupon = async (req, res) => {
 
         const coupon = await Coupon.findById(couponId)
         if(!coupon){
-            return res.status(404).json({success: false, message: 'Coupon not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Coupon not found'})
         }
 
         const existing = await Coupon.findOne({
@@ -99,7 +100,7 @@ const editCoupon = async (req, res) => {
         })
 
         if(existing){
-            return res.status(400).json({success: false, message: 'Coupon code already existing'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Coupon code already existing'})
         }
 
         coupon.code = code
@@ -114,10 +115,10 @@ const editCoupon = async (req, res) => {
 
         await coupon.save()
 
-        res.status(200).json({success: true, message: 'Coupon updated successfully'})
+        res.status(STATUS.OK).json({success: true, message: 'Coupon updated successfully'})
     } catch (error) {
         console.error('Error while updating coupon', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -127,14 +128,14 @@ const deleteCoupon = async (req, res) => {
         const couponId = req.params.id 
         const coupon = await Coupon.findById(couponId)
         if(!coupon){
-            return res.status(404).json({success: false, message: 'Coupon not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Coupon not found'})
         }
 
         await Coupon.deleteOne({_id: couponId})
-        res.status(200).json({ success: false, message: 'Coupon deleted'})
+        res.status(STATUS.OK).json({ success: false, message: 'Coupon deleted'})
     } catch (error) {
         console.error('Error while deleting coupon', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 module.exports = {

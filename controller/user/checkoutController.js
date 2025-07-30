@@ -5,6 +5,7 @@ const ProductVariant = require('../../models/productVariantSchema')
 const Cart = require('../../models/cartSchema')
 const getBestOfferPrice = require('../../utils/offerHelper')
 const Coupon = require('../../models/couponSchema')
+const STATUS = require('../../utils/statusCodes')
 
 
 const loadCheckout = async (req, res) => {
@@ -63,23 +64,23 @@ const removeItem = async (req, res) => {
         })
 
         if(!user || !user.cart.length){
-            return res.status(404).json({success: false, message: 'Cart not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Cart not found!'})
         }
 
         let cartDoc = user.cart[0]
         const itemIndex = cartDoc.items.findIndex(item => item._id.toString() === productId)
 
         if(itemIndex === -1){
-            return res.status(404).json({success: false, message: 'Item not found in the cart'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Item not found in the cart'})
         }
 
         cartDoc.items.splice(itemIndex, 1)
         await cartDoc.save()
 
-        return res.status(200).json({success: true, message : 'Item removed from the cart'})
+        return res.status(STATUS.OK).json({success: true, message : 'Item removed from the cart'})
     } catch (error) {
         console.error('Error while removing item from cart', error)
-        return res.status(500).json({success: false, message: 'Internal server error'})
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -103,7 +104,7 @@ const getAvailableCoupons = async (req, res) => {
         res.json({success: true, coupons:usableCoupons})
     } catch (error) {
         console.error('Error while fetching coupon', error)
-        res.status(500).json({success: false, message: 'something went wrong'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'something went wrong'})
     }
 }
 module.exports = { 

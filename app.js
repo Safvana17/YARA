@@ -3,6 +3,7 @@ const env = require('dotenv').config()
 const userRouter = require('./routes/userRouter')
 const adminRouter = require('./routes/adminRouter')
 const countMiddleware = require('./middleware/countMiddleware')
+const errorHandler = require('./middleware/errorHandler')
 const nocache = require('nocache')
 const path = require('path')
 const session = require('express-session')
@@ -45,10 +46,7 @@ app.use('/admin', adminRouter)
 app.use('/', userRouter)
 
 
-app.use((req, res, next) =>{
-    //console.log('hi')
-    res.status(404).render('page-404', {message: 'Page Not Found'})
-})
+app.use(errorHandler)
 
 app.listen(process.env.PORT,()=>{
     console.log(`Server started at ${process.env.PORT}`)

@@ -4,6 +4,7 @@ const Cart = require('../../models/cartSchema')
 const User = require('../../models/userSchema')
 const Wishlist = require('../../models/wishlistSchema')
 const Category = require('../../models/categorySchema')
+const STATUS = require('../../utils/statusCodes')
 
 const loadWishlist = async (req, res) => {
     try {
@@ -37,6 +38,7 @@ const loadWishlist = async (req, res) => {
     }
 }
 
+
 //addto wishlist
 const addToWishlist = async (req, res) => {
     try {
@@ -46,17 +48,17 @@ const addToWishlist = async (req, res) => {
         const productId = req.body.productId
         
         if(user.wishlist.includes(productId)){
-            return res.status(400).json({success: false, message: 'Product already exists in wishlist'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Product already exists in wishlist'})
         }
 
         user.wishlist.push(productId)
         await user.save()
 
-        res.status(200).json({status: true, message: 'Item addedd to wishlist'})
+        res.status(STATUS.OK).json({status: true, message: 'Item addedd to wishlist'})
 
     } catch (error) {
         console.error('Error while adding item to wishlist', error)
-        res.status(500).json({success: false, message :'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message :'Internal server error'})
     }
 }
 
@@ -68,22 +70,22 @@ const removeFromWishlist = async (req, res) => {
         const productId = req.params.id 
         const product = await Product.findById(productId)
         if(!product){
-            return res.status(404).json({success: false, message: 'Product not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product not found'})
         }
 
         if(!user.wishlist.includes(productId)){
-            return res.status(404).json({success: false, message: 'Item not found in the wishlist'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Item not found in the wishlist'})
         }
 
         const index = await user.wishlist.indexOf(productId)
         user.wishlist.splice(index, 1)
         await user.save()
 
-        res.status(200).json({success: true, message :'Product removed from wishlist'})
+        res.status(STATUS.OK).json({success: true, message :'Product removed from wishlist'})
         
     } catch (error) {
         console.error('Error while removing item from wishlist', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -99,11 +101,11 @@ const addToCartFromWishlist = async (req, res) => {
     const variant = await ProductVariant.findById(variantId)
 
     if(!product || !variant){
-        return res.status(404).json({success: false, message: 'Product or variant not found'})
+        return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product or variant not found'})
     }
 
     if(variant.stockQuantity <= 0){
-        return res.status(400).json({success: false, message: 'Selected variant is out of stock'})
+        return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Selected variant is out of stock'})
     }
 
     const user = await User.findById(userId)
@@ -169,7 +171,7 @@ const addToCartFromWishlist = async (req, res) => {
     console.error('Error in add to cart', error)
     console.error('Error in addToCartFromWishlist:', error.message, error.stack)
 
-    return res.status(500).json({success: false, message: 'Internal server error'})
+    return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
 }
 }
 module.exports = {

@@ -3,6 +3,7 @@ const Order = require('../../models/orderSchema')
 const Product = require('../../models/productSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Coupon = require('../../models/couponSchema')
+const STATUS =require('../../utils/statusCodes')
 const PDFDocument = require('pdfkit')
 
 
@@ -65,7 +66,7 @@ const viewOrderDetails = async (req, res) => {
               .populate('orderItems.variant')
         
         if(!order){
-            return res.status(404).send('Order not found!')
+            return res.status(STATUS.NOT_FOUND).send('Order not found!')
         }
 
         const allReturnRequested = order.orderItems.every(item => item.itemStatus === 'Return Request')
@@ -84,33 +85,27 @@ const updateOrderStatus = async (req, res) => {
         const order = await Order.findById(orderId)
 
         if(!order){
-            return res.status(400).json({success: false, message: 'Order not found'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order not found'})
         }
 
         if(order.status === 'Cancelled'){
-            return res.status(400).json({success: false, message: 'Cannot change the status of cancelled order'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Cannot change the status of cancelled order'})
         }
         const item = order.orderItems.id(itemId)
         if(!item){
-            return res.status(404).json({success: false, message: 'Item not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Item not found'})
         }
         if(item.itemStatus === 'Cancelled'){
-            return res.status(400).json({success: false, message: 'Cannot update cancelled item'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Cannot update cancelled item'})
         }
 
 
         const validStatus = ['Pending', 'Shipped', 'Delivered', 'Cancelled', 'Returned']
 
         if(!validStatus.includes(status)){
-            return res.status(400).json({success: false, message: 'Invalid status update'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Invalid status update'})
         }
 
-        // for(let item of order.orderItems){
-        //     if(item.itemStatus !== 'Cancelled'){
-        //         item.itemStatus = status
-        //     }
-        // }
-        // order.status = status
         item.itemStatus = status
         const statuses = order.orderItems.map(i => i.itemStatus)
         if(statuses.every(s => s === 'Cancelled')) order.status = 'Cancelled'
@@ -120,11 +115,11 @@ const updateOrderStatus = async (req, res) => {
 
         await order.save()
 
-        res.status(200).json({success: true, message: 'Order status upadated successfully'})
+        res.status(STATUS.OK).json({success: true, message: 'Order status upadated successfully'})
 
     } catch (error) {
         console.error('Error while updating the status', error)
-        res.status(500).json({success: false, message :'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message :'Internal server error'})
     }
 }
 
@@ -138,7 +133,7 @@ const getInvoice = async (req, res) => {
              .populate('orderItems.variant')
         
         if(!order){
-            return res.status(404).send('Order not found')
+            return res.status(STATUS.NOT_FOUND).send('Order not found')
         }
 
         res.setHeader('Content-Type', 'application/pdf');
@@ -201,11 +196,11 @@ const approveReturnRequest = async (req, res) => {
         const user = await User.findById(order.userId._id)
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
 
         if(order.status !== 'Return Request'){
-            return res.status(400).json({success: false, message: 'Order is not in return state'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order is not in return state'})
         }
 
         //restock product
@@ -235,10 +230,10 @@ const approveReturnRequest = async (req, res) => {
         await user.save()
 
         
-        res.status(200).json({success: true, message: 'Oreder return request approved!'})
+        res.status(STATUS.OK).json({success: true, message: 'Oreder return request approved!'})
     } catch (error) {
         console.error('Error while approving return request', error)
-        re.s.status(500).json({success: false, message: 'Internal server error'})
+        re.s.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -249,11 +244,11 @@ const cancelReturnRequest = async (req, res) => {
         const order = await Order.findById(orderId)
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found'})
         }
 
         if(order.status !== 'Return Request'){
-            return res.status(400).json({success: false, message: 'Order not in return state!'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order not in return state!'})
         }
 
         for(let item of order.orderItems){
@@ -263,10 +258,10 @@ const cancelReturnRequest = async (req, res) => {
         order.cancelReason = ''
         await order.save()
 
-        res.status(200).json({success: true, message: 'Return request rejected!'})
+        res.status(STATUS.OK).json({success: true, message: 'Return request rejected!'})
     } catch (error) {
         console.error('Error while rejecting return request', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -280,12 +275,12 @@ const approveItemReturnRequest = async (req, res) => {
         const user = await User.findById(order.userId._id)
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
 
         const item = order.orderItems.id(itemId)
         if(item.itemStatus !== 'Return Request'){
-           return res.status(400).json({success: false, message: 'Order is not in return state'})
+           return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order is not in return state'})
         }
         //restock product
         await ProductVariant.findByIdAndUpdate(item.variant, {
@@ -295,7 +290,7 @@ const approveItemReturnRequest = async (req, res) => {
         item.itemStatus = 'Returned'
        
 
-        //creidit wallet
+        //credit wallet
         const refundAmount = item.price * item.quantity
         user.wallet += refundAmount
         order.finalAmount -= refundAmount
@@ -312,10 +307,10 @@ const approveItemReturnRequest = async (req, res) => {
         order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
         await order.save();
         
-        res.status(200).json({success: true, message: 'Item return request approved!'})
+        res.status(STATUS.OK).json({success: true, message: 'Item return request approved!'})
     } catch (error) {
         console.error('Error while approving return request', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -326,26 +321,26 @@ const cancelItemReturnRequest = async (req, res) => {
         const order = await Order.findById(orderId)
 
         if(!order){
-            return res.status(404).json({success: false, message: 'Order not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found'})
         }
 
         const item = order.orderItems.id(itemId)
         if(!item){
-            return res.status(404).json({success: false, message: 'Item not found'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Item not found'})
         }
 
         if(item.itemStatus !== 'Return Request'){
-            return res.status(400).json({success: false, message: 'Item not in return state!'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Item not in return state!'})
         }
 
         item.itemStatus = 'Rejected'
         item.itemCancelReason = ''
         await order.save()
 
-        res.status(200).json({success: true, message: 'Return request rejected!'})
+        res.status(STATUS.OK).json({success: true, message: 'Return request rejected!'})
     } catch (error) {
         console.error('Error while rejecting return request', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 module.exports = {

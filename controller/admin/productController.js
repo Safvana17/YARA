@@ -10,6 +10,7 @@ const sharp = require('sharp')
 const cloudinary = require('../../utils/cloudinary')
 const getBestOfferPrice = require('../../utils/offerHelper')
 const Order = require('../../models/orderSchema')
+const STATUS = require('../../utils/statusCodes')
 const { name } = require('ejs')
 
 
@@ -21,6 +22,8 @@ const getTotalStock = async (productId) => {
     ])
     return result.length > 0 ? result[0].totalStock : 0
 }
+
+
 const LoadProducts = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1
@@ -44,11 +47,6 @@ const LoadProducts = async (req, res) => {
             const totalStock = await getTotalStock(product._id)
             productsWithStock.push({...product._doc, totalStock})
         }
-        // let sum = 0
-        // const prod = await Product.find({})
-        // for(let p of prod){
-        //     sum += p.regularPrice 
-        // }
 
         res.render('products',{
             products: productsWithStock,
@@ -85,32 +83,8 @@ const addProducts = async (req, res) => {
 
         const ProductExists = await Product.findOne({name: {$regex: new RegExp(`^${name}$`, 'i')}})
         if(ProductExists){
-            return res.status(400).json({success: false, message: 'Product already exists, please try another name'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Product already exists, please try another name'})
         }
-
-        // const uploadDir = path.join(__dirname, '../../public/images')
-        // if(!fs.existsSync(uploadDir)){
-        //     fs.mkdirSync(uploadDir, {recursive: true})
-        // }
-
-        // const imageFilenames = []
-        // for(let i=1; i<= 5; i++){
-        //   const croppedImageData = req.body[`croppedImages${i}`]
-
-        //   const filename = Date.now() + "-" + `cropped-image-${i}` + ".webp";
-        //   const filepath = path.join(uploadDir, filename);
-
-        //   if(croppedImageData && croppedImageData.startsWith('data:image')){
-        //     const base64Data = croppedImageData.replace(/^data:image\/\w+;base64,/, '')
-        //     const imageBuffer = Buffer.from(base64Data, 'base64')
-
-        //     await sharp(imageBuffer)
-        //           .webp({quality: 80})
-        //           .toFile(filepath)
-
-        //     imageFilenames.push(`images/${filename}`)
-        //   }
-        // }
 
 
         const imageFilenames = []
@@ -136,12 +110,12 @@ const addProducts = async (req, res) => {
         console.log(Object.keys(req.body)) // To check what croppedImages# keys you're receiving
 
         if(imageFilenames.length < 5){
-            return res.status(400).json({success: false, message: 'Please upload all 5 product images'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Please upload all 5 product images'})
         }
 
         const category = await Category.findById(categoryId)
         if(!category){
-            return res.status(400).json({success: false, message: 'Category not found'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Category not found'})
         }
 
        const newProduct = new Product({
@@ -178,10 +152,10 @@ const addProducts = async (req, res) => {
             await newVariant.save()
         }
        }
-       return res.status(200).json({success: true, message: "Product added successfully"})
+       return res.status(STATUS.OK).json({success: true, message: "Product added successfully"})
     } catch (error) {
         console.error("Error while adding product", error)
-       return res.status(500).json({success: false, message: 'Error saving product'})      
+       return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Error saving product'})      
     }
 }
 
@@ -190,10 +164,10 @@ const blockProduct = async (req, res) => {
     try {
         const id = req.params.id
         await Product.updateOne({_id: id},{$set: {isBlocked: true}})
-        res.status(200).json({success: true, message: 'product blocked'})
+        res.status(STATUS.OK).json({success: true, message: 'product blocked'})
     } catch (error) {
         console.error('error while block product', error)
-        res.status(500).json({success: false, message: 'Error unblocking products'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Error unblocking products'})
     }
 }
 
@@ -202,10 +176,10 @@ const unblockProduct = async (req, res) => {
     try {
         const id = req.params.id
         await Product.updateOne({_id: id},{$set: {isBlocked: false}})
-        return res.status(200).json({success: true, message: 'Product unblocked'})
+        return res.status(STATUS.OK).json({success: true, message: 'Product unblocked'})
     } catch (error) {
         console.error("Error while unblock product", error)
-        return res.status(500).json({success: false, message: 'Error unblock product'})
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Error unblock product'})
     }
 }
 
@@ -219,7 +193,7 @@ const getEditProduct = async (req, res) => {
         const variants = await ProductVariant.find({productId: id}).lean()
 
         if(!product){
-            return res.status(404).send('Product not found')
+            return res.status(STATUS.NOT_FOUND).send('Product not found')
         }
         console.log('variants:', variants)
         res.render('edit-product',{
@@ -245,7 +219,7 @@ const editProduct = async (req, res) => {
         })
 
         if(existingProduct){
-            return res.status(400).json({status: false, message: 'Product with this name already existing, Please try another name.'})
+            return res.status(STATUS.BAD_REQUEST).json({status: false, message: 'Product with this name already existing, Please try another name.'})
         }
 
         const updatedProduct = {
@@ -260,7 +234,7 @@ const editProduct = async (req, res) => {
 
         const product = await Product.findById(productId)
         if(!product){
-            return res.status(404).json({status: false, message: 'Product not found'})
+            return res.status(STATUS.NOT_FOUND).json({status: false, message: 'Product not found'})
         }
 
         const uploadedImages = [...product.productImage]; // Clone current images
@@ -367,7 +341,7 @@ if (toDelete.length > 0) {
     res.json({success: true, message: "Product updated successfully"})
     } catch (error) {
         console.error("Error in editproduct", error)
-        res.status(500).json({success: false, message: 'An error occured while updating product details'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'An error occured while updating product details'})
     }
 }
 
@@ -390,20 +364,11 @@ const deleteSingleImage = async (req, res) => {
         const product = await Product.findById(productIdToServer)
 
         if(!product){
-            return res.status(400).json({success: true, message: 'Product not found!'})
+            return res.status(STATUS.BAD_REQUEST).json({success: true, message: 'Product not found!'})
         }
 
         product.productImage.splice(imageIndex, 1)
         await product.save()
-
-        // const imagePath = path.join(__dirname, '../../public', imageNameToServer)
-
-        // if(fs.existsSync(imagePath)){
-        //     fs.unlinkSync(imagePath)
-        //     console.log(`Image ${imageNameToServer} deleted successfully`)
-        // }else{
-        //     console.log(`Image ${imageNameToServer}  not found`)
-        // }
 
         const publicId = extractCloudinaryPublicId(imageUrl)
         if(publicId){
@@ -417,7 +382,7 @@ const deleteSingleImage = async (req, res) => {
 
     } catch (error) {
         console.error("Error while deleting image", error)
-        res.status(500).json({status: false, message: 'An error occured while deleting image'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({status: false, message: 'An error occured while deleting image'})
     }
 }
 
@@ -431,11 +396,11 @@ const addOffer = async (req, res) => {
         const end = new Date(endDate)
 
         if(isNaN(offerValue) || offerValue < 1 || offerValue > 90){
-            return res.status(400).json({ success: false, message: 'Invalid offer value'})
+            return res.status(STATUS.BAD_REQUEST).json({ success: false, message: 'Invalid offer value'})
         }
         const product = await Product.findById(productId).populate('category')
         if(!product || product.isBlocked){
-            return res.status(400).json({success: false, message: 'Product not found or blocked'})
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Product not found or blocked'})
         }
 
         //const categoryoffer = product.category?.categoryoffer || 0
@@ -444,19 +409,13 @@ const addOffer = async (req, res) => {
         product.offerEndDate = end
         product.isOfferActive = false
 
-        // const bestPrice = getBestOfferPrice(
-        //     product.salePrice,
-        //     offerValue,
-        //     categoryoffer
-        // )
-
-        // product.salePrice = bestPrice !== null ? bestPrice : product.baseSalePrice
+        
         await product.save()
         //await Product.findByIdAndUpdate(productId,{productOffer: offerValue})
-        res.status(200).json({success: true, message: 'Offer addedd successfully.'})
+        res.status(STATUS.OK).json({success: true, message: 'Offer addedd successfully.'})
     } catch (error) {
         console.error('Error while adding offer', error)
-        res.status(500).json({success: false, message :'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message :'Internal server error'})
     }
 }
 
@@ -466,7 +425,7 @@ const removeOffer = async (req, res) => {
         const productId = req.params.id 
         const product = await Product.findById(productId).populate('category')
         if(!product){
-            return res.status(404).json({success: false, message: 'Product not found!'})
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Product not found!'})
         }
 
         const categoryoffer = product.category?.categoryoffer || 0
@@ -488,12 +447,12 @@ const removeOffer = async (req, res) => {
 
         //await Product.findByIdAndUpdate(productId, {productOffer: 0})
 
-        res.status(200).json({success: true, message :'Offer removed'})
+        res.status(STATUS.OK).json({success: true, message :'Offer removed'})
 
     } catch (error) {
 
         console.error('Error while removing offer', error)
-        res.status(500).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
         
     }
 }

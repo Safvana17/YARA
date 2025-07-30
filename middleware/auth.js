@@ -1,4 +1,5 @@
 const User = require('../models/userSchema')
+const STATUS = require('../utils/statusCodes')
 
 const adminAuth = (req, res, next) => {
     if(req.session.adminId){
@@ -12,7 +13,7 @@ const adminAuth = (req, res, next) => {
             })
             .catch((error)=>{
                 console.error("ERror in adminauth middleware", error)
-                res.status(500).json('Internal server error')
+                res.status(STATUS.INTERNAL_SERVER_ERROR).json('Internal server error')
             })
     }else{
         res.redirect('/admin/login')
@@ -31,7 +32,7 @@ const userAuth = (req, res, next) =>{
             })
             .catch((error)=>{
                 console.error("Error in userauth middleware", error)
-                res.status(500).json("Internal server error")
+                res.status(STATUS.INTERNAL_SERVER_ERROR).json("Internal server error")
             })     
     }else{
         res.redirect('/login')

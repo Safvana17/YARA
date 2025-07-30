@@ -48,13 +48,23 @@
           <% }) %>
         </div>
       <% } %>
-
       <div class="text-end">
         <a href="/add-address" class="btn btn-success mt-3">+ Add New Address</a>
       </div>
     </div>
   </div>
 </div>
+                  <% if(totalPages > 1) { %>
+        <nav class="mb-5">
+            <ul class="pagination justify-content-center">
+               <% for(let i=1; i<=totalPages; i++){ %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a  class="page-link" href="/address?page=<%= i %>&search=<%= search %>"><%= i %></a>
+                </li>
+               <% } %>
+            </ul>
+        </nav>
+    <% } %>
 
 <%- include("../../views/partials/user/footer") %>
   <!-- Bootstrap Bundle JS (includes Popper) -->

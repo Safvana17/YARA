@@ -3,7 +3,9 @@ const Brand = require('../../models/brandSchema')
 const Product = require('../../models/productSchema')
 const Category = require('../../models/categorySchema')
 const Notification = require('../../models/notificationSchema')
+const STATUS =require('../../utils/statusCodes')
 const moment = require('moment')
+const { STATES } = require('mongoose')
 
 
 //dashbord
@@ -249,7 +251,7 @@ const getDashboardData = async (req, res) => {
         })
     } catch (error) {
         console.error('Error while generating dashboard data', error)
-        res.status(500).json({error: 'Failed to load dashboard dta'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({error: 'Failed to load dashboard dta'})
     }
 }
 
@@ -259,7 +261,7 @@ const markAllRead = async (req, res) => {
         res.json({success: true})
     } catch (error) {
         console.error('Mark all read error', error)
-        res.status(500).json({success: false})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false})
     }
 }
 module.exports = {

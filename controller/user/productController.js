@@ -3,6 +3,7 @@ const User = require('../../models/userSchema')
 const ProductVariant = require('../../models/productVariantSchema')
 const Brand = require('../../models/brandSchema')
 const Category = require('../../models/categorySchema')
+const STATUS = require('../../utils/statusCodes')
 
 const productDetails = async (req, res) => {
     try {
