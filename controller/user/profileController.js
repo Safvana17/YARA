@@ -1,5 +1,6 @@
 const User = require('../../models/userSchema')
 const Address = require('../../models/addressSchema')
+const Coupon = require('../../models/couponSchema')
 const STATUS = require('../../utils/statusCodes')
 const nodemailer = require('nodemailer')
 const bcrypt = require('bcrypt')
@@ -159,7 +160,8 @@ const loadUserProfile = async (req, res) => {
         const userId = req.session.user
         const userData = await User.findOne({_id: userId})
         res.render('profile',{
-            user: userData
+            user: userData,
+            currentPath: req.path
         })
     } catch (error) {
         console.error('Error while loading user profile page', error)
@@ -358,7 +360,7 @@ const changePassword = async (req, res) => {
 //get address page
 const getAddressPage = async (req, res) => {
     try {
-        const page = req.query.page || 1
+        const page = parseInt(req.query.page) || 1
         const search = req.query.search || ''
         const limit = 1
         const skip = (page -1)*limit
@@ -381,8 +383,8 @@ const getAddressPage = async (req, res) => {
             addressData:{address: paginatedAddress},
             search,
             totalPages,
-            currentPage: page
-
+            currentPage: page,
+            currentPath: req.path
         })
     } catch (error) {
         console.error('Error while loading error page', error)
@@ -537,10 +539,49 @@ const loadReferAndEarn = async (req, res) => {
         const userId = req.session.user 
         const user = await User.findById(userId)
               .populate('redeemedUsers', 'name')
-      res.render('referAndEarn', {user})  
+      res.render('referAndEarn', {user,currentPath: req.path})  
     } catch (error) {
        console.error('Error while loading refer and earn page', error)
        res.redirect('/pageNotFound') 
+    }
+}
+//coupons
+const loadCouponsPage = async (req, res) => {
+    try {
+        const userId = req.session.user
+        const page = parseInt(req.query.page) || 1
+        const search = req.query.search || ''
+        const limit = 5
+        const skip = (page - 1) * limit
+        const now = new Date()
+
+        const [user, coupons] = await Promise.all([
+            User.findById(userId),
+            Coupon.find({
+                status: true,
+                startingDate: {$lte: now},
+                expiryDate: {$gte: now}
+            }).lean()
+        ])
+
+        const usableCoupons = coupons.filter(coupon =>{
+            const usedCount = coupon.usedUsers.filter(id => id.toString() === userId).length
+            return usedCount < coupon.usagePerUser
+        })
+        const count = usableCoupons.length
+        const totalPages = Math.ceil( count / limit )
+        const paginatedCoupons = usableCoupons.slice(skip, skip+limit)
+        res.render('coupons', {
+            user,
+            usableCoupons: paginatedCoupons,
+            search,
+            currentPage: page,
+            totalPages,
+            currentPath: req.path
+        })
+    } catch (error) {
+        console.error('Error while loading coupons page', error)
+        res.redirect('/pageNotFound')
     }
 }
 module.exports = {
@@ -567,5 +608,6 @@ module.exports = {
     getEditAddress,
     editAddress,
     deleteAddress,
-    loadReferAndEarn
+    loadReferAndEarn,
+    loadCouponsPage
 }

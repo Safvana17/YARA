@@ -66,7 +66,14 @@
   </div>
 </div>
 <div class="container my-5 flex-grow-1">
-
+<div class="row">
+      <!-- Sidebar -->
+    <div class="col-md-3">
+      <div class="list-group shadow-sm">
+        <%- include("../../views/partials/user/sidebar") %>
+      </div>
+    </div>
+      <div class="col-md-9">
   <% if (products.length === 0) { %>
     <div class="text-center mt-5">
       <h2><strong>Your wishlist is empty</strong><br></h2>
@@ -107,8 +114,21 @@
       <% }) %>
     </div>
   <% } %>
+      </div>
 </div>
-</nav>
+</div>
+                  <% if(totalPages > 1) { %>
+        <nav class="mb-5">
+            <ul class="pagination justify-content-center">
+               <% for(let i=1; i<=totalPages; i++){ %>
+                <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                    <a  class="page-link" href="/wishlist?page=<%= i %>&search=<%= search %>"><%= i %></a>
+                </li>
+               <% } %>
+            </ul>
+        </nav>
+    <% } %>
+
 <!-- select size modal -->
  <div class="modal fade" tabindex="-1" id="variantModal" aria-labelledby="variantModalLabel">
   <div class="modal-dialog modal-dialog-centered">

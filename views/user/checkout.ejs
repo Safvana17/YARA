@@ -238,8 +238,8 @@
   document.getElementById('placeOrderForm').addEventListener('submit', async function (e) {
     e.preventDefault()
   
-    const placeOrderBtn = document.querySelector('.plceOrderBtn')
-    placeOrderBtn.disabled = true
+    // const placeOrderBtn = document.querySelector('.plceOrderBtn')
+    // placeOrderBtn.disabled = true
     const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
     if (!selectedAddress) {
       return Swal.fire('Please select a shipping address', '', 'warning');
@@ -324,7 +324,7 @@
                 const verifyResult = await verifyRes.json()
                 if(verifyResult.success){
                   document.querySelector('.btn-success').disabled = true
-                  const result = await placeOrder('razorpay')
+                  const result = await placeOrder('razorpay', response)
                   handleOrderResult(result)
                 }else{
                   Swal.fire('Payment verification failed', '', 'error')
@@ -363,15 +363,29 @@
 
 
 
-  async function placeOrder(method) {
+  async function placeOrder(method, razorpayResponse = null) {
     try {
-      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+      const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked')
+      const finalAmount = parseFloat(document.getElementById('finalAmount').value)
+
+      const body = {
+        payment: method,
+        selectedAddress: selectedAddress?.value,
+        finalAmount
+      }
+
+      // Include Razorpay details if method is razorpay
+      if (method === 'razorpay' && razorpayResponse) {
+        body.razorpay_order_id = razorpayResponse.razorpay_order_id
+        body.razorpay_payment_id = razorpayResponse.razorpay_payment_id
+        body.razorpay_signature = razorpayResponse.razorpay_signature
+      }
       const res = await fetch('/place-order', {
         method: 'POST',
         headers: {
           'content-type': 'application/json'
         },
-        body: JSON.stringify({ payment: method, selectedAddress: selectedAddress?.value })
+        body: JSON.stringify(body)
       })
       return await res.json() //{success: true, orderId: ....}
     } catch (error) {
@@ -389,17 +403,17 @@
     if(result.success){
       window.location.href = `/order-confirmed/${result.orderId}`
     }else{
-    //   Swal.fire({
-    //     icon: 'error',
-    //     title: 'Order Failed',
-    //     text: result.message || 'Something went wrong placing your order. Try again.',
-    //     confirmButtonText: 'Retry'
-    //   })
-    //   .then(()=>{
-    //     window.location.reload()
-    //   })
-          console.log('Error: ', result.message)
-         window.location.href = `/order-failed`
+      Swal.fire({
+        icon: 'error',
+        title: 'Order Failed',
+        text: result.message || 'Something went wrong placing your order. Try again.',
+        confirmButtonText: 'Retry'
+      })
+      .then(()=>{
+        window.location.reload()
+      })
+        //   console.log('Error: ', result.message)
+        //  window.location.href = `/order-failed?message=${encodeURIComponent(result.message)}`
      }
   }
 </script>

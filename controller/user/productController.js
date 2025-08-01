@@ -10,7 +10,7 @@ const productDetails = async (req, res) => {
         const userId = req.session.user
         const productId = req.query.id 
 
-        const [userData, productData, ProductVariant] = await Promise.all([ 
+        const [userData, productData, productVariant] = await Promise.all([ 
             User.findById(userId),
             Product.findById(productId).populate('category').populate('brand'),
             ProductVariant.find({productId: productId})

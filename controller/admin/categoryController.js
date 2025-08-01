@@ -15,7 +15,7 @@ const loadCategories = async (req, res) => {
         if(req.query.page){
             page = parseInt(req.query.page)
         }
-        let limit = 3
+        let limit = 6
         const skip = (page - 1)* limit
         const categories = await Category.find({})
                 .sort({createdAt: -1})

@@ -48,7 +48,6 @@
   </div>
 </div>
 <div class="container my-5 flex-grow-1">
-  <h3 class="mb-4 text-center">Shopping Cart</h3>
 
 
   <% if (cartItems.length === 0) { %>
@@ -61,7 +60,7 @@
       <a href="/shop" class="btn btn-outline-danger mt-3">Add items to Cart</a>
     </div>
   <% } else { %>
-    <form action="/checkout" method="post" id="cartForm"></form>
+    <form action="/checkout" method="post" id="cartForm">
     <div class="row">
       <div class="col-md-8">
         <% cartItems.forEach(item => { %>
@@ -113,12 +112,17 @@
           <p><strong>Tax: ₹<span id="selectedTotal"><%= tax %></span></strong></p>
           <hr>
           <p><strong>Total: ₹<span id="selectedTotal"><%= finalAmount %></span></strong></p>
-          <a href="/checkout" class="btn btn-success w-100 mt-3"><i class="bi bi-bag-check-fill p-2"></i>Proceed to Checkout</a>
+          <!-- <a href="/checkout" class="btn btn-success w-100 mt-3"><i class="bi bi-bag-check-fill p-2"></i>Proceed to Checkout</a> -->
+           <button type="submit" class="btn btn-success w-100 mt-3">
+            <i class="bi bi-bag-check-fill p-2"></i>Proceed to Checkout
+           </button>
         </div>
       </div>
     </div>
+    </form>
   <% } %>
 </div>
+
 
 <%- include("../../views/partials/user/footer") %>
 

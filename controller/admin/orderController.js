@@ -13,7 +13,7 @@ function calculateOrderStatus(statuses) {
   if (statuses.every(s => s === 'Delivered')) return 'Delivered'
   if(statuses.every(s => s === 'Return Request')) return 'Return Request'
   if(statuses.every(s => s === 'Returned')) return 'Returned'
-  if(statuses.some(s => s === 'Delivered')) return 'Partially Delivered '
+  if(statuses.some(s => s === 'Delivered')) return 'Partially Delivered'
   if (statuses.includes('Cancelled') && !statuses.every(s => s === 'Cancelled')) return 'Partially Cancelled'
   if (statuses.includes('Returned')) return 'Partially Returned'
   return 'Processing'
@@ -23,7 +23,7 @@ const getOrders = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1
         const search = req.query.search || ''
-        const limit = 7
+        const limit = 15
         const skip = ( page - 1 ) * limit
 
         const doc = {}
@@ -192,11 +192,9 @@ const getInvoice = async (req, res) => {
 const approveReturnRequest = async (req, res) => {
     try {
         const orderId = req.params.id 
-        const [order, user] = await Promise.all([ 
-            Order.findById(orderId),
-            User.findById(order.userId._id)
-        ])
-
+        const order = await Order.findById(orderId)
+        const user = await User.findById(order.userId._id)
+        
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
         }
@@ -220,8 +218,10 @@ const approveReturnRequest = async (req, res) => {
 
         //creidit wallet
         const refundAmount = order.finalAmount
-        user.wallet += refundAmount
+        user.wallet = user.wallet || 0
+        user.wallet += refundAmount 
 
+        user.walletTransaction = user.walletTransaction || [];
         user.walletTransaction.push({
             amount: refundAmount,
             status: 'credited',
@@ -235,7 +235,7 @@ const approveReturnRequest = async (req, res) => {
         res.status(STATUS.OK).json({success: true, message: 'Oreder return request approved!'})
     } catch (error) {
         console.error('Error while approving return request', error)
-        re.s.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
+        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
     }
 }
 
@@ -274,10 +274,12 @@ const approveItemReturnRequest = async (req, res) => {
         const {orderId, itemId} = req.params
         console.log("Route Params:", req.params);
 
-        const [order, user] = await Promise.all([ 
-            Order.findById(orderId),
-            User.findById(order.userId._id)
-        ])
+        const order = await Order.findById(orderId)
+        const user = await User.findById(order.userId)
+        
+        if(!user){
+            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'User not found'})
+        }
         
         if(!order){
             return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})

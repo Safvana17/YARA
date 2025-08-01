@@ -10,21 +10,30 @@ const STATUS = require('../../utils/statusCodes')
 
 const loadCheckout = async (req, res) => {
     try {
-        const userId = req.session.user 
-        const [user, addressDoc] = await Promise.all([ 
+        const userId = req.session.user
+        const selectedItemsIds = req.body.selectedItems
+        
+        const selectedIds = Array.isArray(selectedItemsIds)
+              ? selectedItemsIds
+              : [selectedItemsIds]
+        
+        const [user, addressDoc, cartDoc] = await Promise.all([ 
             User.findById(userId),
-            Address.findOne({userId}) 
+            Address.findOne({userId}),
+            Cart.findOne({userId}).populate('items.productId items.variantId')
         ])
 
         const addresses = addressDoc ?. address || []
         const selectedAddress = addresses.find(addr => addr.isDefault === true)
 
-        const cartDoc = await Cart.findOne({userId}).populate('items.productId items.variantId')
-        const cartItems = cartDoc ?. items || []
+        const cartItems = cartDoc?.items || []
+
+        //only filtered items
+        const filteredItems = cartItems.filter(item => selectedIds.includes(item._id.toString()))
 
         console.log('selectedAddress:', selectedAddress)
         
-        const subTotal = cartItems.reduce((acc, curr) => acc + curr.totalPrice, 0)
+        const subTotal = filteredItems.reduce((acc, curr) => acc + curr.totalPrice, 0)
         console.log("subtotal:",subTotal)
         const deliveryCharge = subTotal > 1000 ? 0 : 40
         const discount = 0
@@ -37,7 +46,7 @@ const loadCheckout = async (req, res) => {
             user,
             addresses,
             selectedAddress,
-            cartItems,
+            cartItems: filteredItems,
             totalAmount:subTotal,
             shippingCharge: deliveryCharge,
             discount,
@@ -109,8 +118,25 @@ const getAvailableCoupons = async (req, res) => {
         res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'something went wrong'})
     }
 }
+
+//get load checkout
+// const loadCheckoutGet = async (req, res) => {
+//     try {
+//         const userId = req.session.user 
+//         const [user, cart] = await Promise.all([
+//             User.findById(userId),
+//             Cart.findOne({userId}).populate('items.productId')
+//         ])
+
+//         res.render('checkout', {user, cart})
+//     } catch (error) {
+//        console.error('Error while loading checkout page', error)
+//        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'}) 
+//     }
+// }
 module.exports = { 
     loadCheckout,
     removeItem,
-    getAvailableCoupons
+    getAvailableCoupons,
+    // loadCheckoutGet
 }

@@ -16,8 +16,34 @@ const Razorpay = require('razorpay')
 const crypto = require('crypto')
 const { count } = require('console')
 const mongoose = require('mongoose')
+const nodemailer = require('nodemailer')
 
-
+//send refund email
+async function sendRefundEmail(paymentId, amount, email) {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: process.env.NODEMAILER_EMAIL,
+                pass: process.env.NODEMAILER_PASSWORD
+            },
+        })
+        const info = await transporter.sendMail({
+            from: process.env.NODEMAILER_EMAIL,
+            to: email,
+            subject: `Refund Initiated`,  
+            html:`
+              <p>Hi,</p>
+              <p>We have initiated your refund of ₹${(amount / 100 ).toFixed(2)} for payment ID: <strong>${paymentId}</strong>.</p>
+              <p>The amount will reflect in your account within 5-7 working days.</p>
+              <p>Thank you for choosing us.</p>          
+              `,
+        })
+        return info.accepted.length > 0
+    } catch (error) {
+        console.error('error while sending refund email',error)
+    }
+}
 //create razorpay order
 const createRazorpayOrder = async (req, res) => {
     try {
@@ -78,7 +104,7 @@ const verifyPayment = async (req, res) => {
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user 
-        const {selectedAddress, payment} = req.body
+        const {selectedAddress, payment, razorpay_payment_id, finalAmount} = req.body
         // const user = await User.findById(userId)
 
         // console.log('REQ.BODY:', req.body)
@@ -114,7 +140,16 @@ const placeOrder = async (req, res) => {
 
         for(let item of cartItems){
             if(item.quantity > item.variantId.stockQuantity){
-                return res.status(STATUS.BAD_REQUEST).json({success: false, message :'Insuffiecient stock for some items'})
+                console.log("Payment method received:", payment);
+                console.log("razorpay_payment_id:", razorpay_payment_id);
+
+                if(payment === 'razorpay' && razorpay_payment_id){
+                    console.log("Initiating refund for paymentId:", razorpay_payment_id, "Amount:", finalAmount*100);
+                    console.log('online payment')
+                    await refundRazorpayPayment(razorpay_payment_id, finalAmount*100, user )
+                }
+                console.log('online payment2')
+                return res.status(STATUS.BAD_REQUEST).json({success: false, message :`Insuffiecient stock for product ${item.productId.name}`})
             }
 
             orderItems.push({
@@ -233,6 +268,29 @@ const placeOrder = async (req, res) => {
 
 }
 
+const refundRazorpayPayment = async (paymentId, amount, user) => {
+  try {
+    const refund = await razorpayInstance.payments.refund(paymentId, {
+      amount: amount
+    });
+
+    // await Notification.create({
+    // message: `₹${(amount / 100).toFixed(2)} has been refunded successfully. The amount will reflect in your account within 5 - 7 working days.`
+    // });
+    const mailSent = await sendRefundEmail(paymentId, amount, user.email)
+    if(mailSent){
+        console.log('Email send successfully')
+    }else{
+        console.log('Not send email')
+    }
+    console.log('Refund successful:', refund);
+  } catch (err) {
+    console.error('Refund failed:', err);
+    throw new Error('Refund failed');
+  }
+}
+
+
 
 //order success page
 const loadOrderSuccessPage = async (req, res) => {
@@ -261,8 +319,8 @@ const loadOrderFailurePage = async (req, res) => {
     try {
         const userId = req.session.user 
         const user = await User.findById(userId)
-
-        res.render('order-failed',{user} )
+        const message = req.query.message || 'Something went wrong'
+        res.render('order-failed',{user, message} )
     } catch (error) {
         console.error('Error while loading order success page', error)
         res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
@@ -301,10 +359,10 @@ const getAllOrders = async (req, res) => {
 
         const search = req.query.search || ''
         const page = parseInt(req.query.page) || 1
-        const limit = 3
+        const limit = 8
         const skip = (page - 1)*limit
 
-        const [user, order] = await Promise.all([
+        const [user, orders] = await Promise.all([
             User.findById(userId),
             Order.find({userId})
                 .populate('orderItems.product orderItems.variant')
@@ -322,7 +380,8 @@ const getAllOrders = async (req, res) => {
             user: user,
             currentPage: page,
             totalPages,
-            search
+            search,
+            currentPath: req.path
         })
 
     } catch (error) {
@@ -607,7 +666,7 @@ const deleteItemOrder = async (req, res) => {
         order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
         await order.save();
 
-        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: true, message: 'Order cancelled'})
+        res.status(STATUS.OK).json({success: true, message: 'Order cancelled'})
     } catch (error) {
         console.error('Error while cancelling item from order', error)
         res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})

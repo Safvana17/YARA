@@ -9,14 +9,13 @@ const STATUS = require('../../utils/statusCodes')
 const loadWishlist = async (req, res) => {
     try {
         const userId = req.session.user 
-        const [user, products] = await Promise.all([ 
-            User.findById(userId),
-            Product.find({_id: {$in: user.wishlist}}).populate('category')
-        ])
-
+        const page = parseInt(req.query.page) || 1
+        const search = req.query.search || ''
+        const limit = 12
+        const skip = (page -1) * limit
+        const user = await User.findById(userId)
+        const products = await Product.find({_id: {$in: user.wishlist}}).populate('category')
         const productId = products.map(p => p._id)
-      
- 
         const variants = await ProductVariant.find({productId: {$in: productId}})
 
         const productsWithVariants = products.map(product =>{
@@ -29,10 +28,17 @@ const loadWishlist = async (req, res) => {
             }
         })
 
+        const count = productsWithVariants.length || 0
+        const totalPages = Math.ceil(count / limit)
+        const paginatedproducts = productsWithVariants.slice(skip, skip+limit)
         
         res.render('wishlist',{
             user,
-            products: productsWithVariants,
+            products: paginatedproducts,
+            currentPath: req.path,
+            search,
+            currentPage: page,
+            totalPages
         })
     } catch (error) {
         console.error('Error while loading wishlist page', error)

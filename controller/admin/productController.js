@@ -194,7 +194,7 @@ const getEditProduct = async (req, res) => {
     try {
         const id = req.params.id
 
-        const [product, category, brand, variant] = await Promise.all([ 
+        const [product, category, brand, variants] = await Promise.all([ 
             Product.findOne({_id: id}).populate('category'),
             Category.find({}),
             Brand.find({isBlocked: false}),

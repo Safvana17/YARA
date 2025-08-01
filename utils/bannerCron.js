@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const Banner = require('../models/bannerSchema')
 
 
-cron.schedule('*/5 * * * *', async () => {
+cron.schedule('0 * * * *', async () => {
   try {
     const now = new Date();
 

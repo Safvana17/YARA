@@ -6,14 +6,25 @@ const crypto = require('crypto')
 
 const loadWalletPage = async (req, res) => {
     try {
-        const page = req.query.page || 1
+        const page = parseInt(req.query.page) || 1
         const search = req.query.search || ''
-        const limit = 5
+        const limit = 8
         const skip = (page - 1)*limit
         const userId = req.session.user 
         const user = await User.findById(userId)
-        
-        res.render('wallet', { user})
+        const walletTransactions = user?.walletTransaction || []
+        const count = walletTransactions.length
+        const totalPages = Math.ceil( count / limit)
+        console.log('totalPages:',totalPages)
+        const paginatedTransaction = walletTransactions.sort((a, b)=> new Date(b.date) - new Date(a.date)).slice(skip, skip+limit)
+        res.render('wallet', { 
+            user,
+            walletTransactions:paginatedTransaction,
+            search,
+            currentPage: page,
+            totalPages,
+            currentPath: req.path
+        })
     } catch (error) {
         console.error('Error while loading wallet page', error)
         res.redirect('/pageNotFound')

@@ -74,6 +74,7 @@ router.post('/update-profile', userAuth, profileController.updateProfile)
 router.post('/update-profile-pic', userAuth, upload.single('profileImage'), profileController.updateProfilePic)
 router.post('/change-password', userAuth, profileController.changePassword)
 router.get('/referAndEarn', userAuth, profileController.loadReferAndEarn)
+router.get('/coupons', userAuth, profileController.loadCouponsPage)
 
 //address management
 router.get('/address', userAuth, profileController.getAddressPage)
@@ -93,7 +94,8 @@ router.delete('/removeItem/:id', userAuth, cartController.removeFromCart)
 router.patch('/updateQuantity/:id', userAuth, cartController.updateQuantity)
 
 //checkout management
-router.get('/checkout', userAuth, checkoutController.loadCheckout)
+router.post('/checkout', userAuth, checkoutController.loadCheckout)
+// router.get('/checkout', userAuth, checkoutController.loadCheckoutGet)
 router.delete('/removeItem/:id', userAuth, checkoutController.removeItem)
 router.get('/available-coupons', userAuth, checkoutController.getAvailableCoupons)
 

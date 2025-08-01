@@ -1,7 +1,56 @@
 <%- include("../../views/partials/user/navbar") %>
+<style>
+        .shop-banner {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    margin-top: 0 !important;
+  padding-top: 0 !important;
+  }
+  .shop-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .banner-text {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    transform: translateY(-50%);
+    color: black;
+  }
+  .banner-text h1 {
+   font-family: 'Cinzel', serif;
+  font-size: 4rem;
+  color: black;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+  margin-bottom: 10px;
+}
 
+.banner-text p {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.2rem;
+  color: black;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+}
+</style>
+ <div class="shop-banner mb-4">
+  <img src="/images/cpnbg1.jpg" alt="Banner">
+  <div class="banner-text">
+    <h1>YARA</h1>
+    <p>Style is the real statement</p>
+  </div>
+</div>
 <div class="container my-5 flex-grow-1">
-  <h2 class="mb-4">My Orders</h2>
+    <div class="row">
+    <!-- sidebar -->
+    <div class="col-md-3">
+      <%- include("../../views/partials/user/sidebar") %>
+    </div>
+  <div class="col-md-9">
+  <h2 class="mb-4 text-center">My Orders</h2>
   <table class="table table-striped">
     <thead>
       <tr>
@@ -54,7 +103,8 @@
         </nav>
     <% } %>
 </div>
-
+    </div>
+</div>
 
 <%- include("../../views/partials/user/footer") %>
   <!-- Bootstrap Bundle JS (includes Popper) -->

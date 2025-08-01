@@ -1,14 +1,22 @@
+<style>
+  .list-group-item.active {
+    background-color: rgb(90, 85, 85);
+    color: white;
+    font-weight: 500;
+  }
+</style>
+
 <div class="card shadow-sm border-0 min-vh-100 ml-3">
   <div class="card-body p-0 ml-3">
     <div class="list-group list-group-flush">
-      <a href="/userProfile" class="list-group-item list-group-item-action">Account Information</a>
-      <a href="/address" class="list-group-item list-group-item-action">Address</a>
-      <a href="/orders" class="list-group-item list-group-item-action">My Orders</a>
-      <a href="/wishlist" class="list-group-item list-group-item-action">Wishlist</a>
-      <a href="/wallet" class="list-group-item list-group-item-action">Wallet</a>
-      <!-- <a href="/coupons" class="list-group-item list-group-item-action">My Coupons</a> -->
-      <a href="/referAndEarn" class="list-group-item list-group-item-action">Refer & Earn</a>
-      <a href="/logout" class="list-group-item list-group-item-action text-danger">Logout</a>
+      <a href="/userProfile" class="list-group-item list-group-item-action <%= currentPath === '/userProfile' ? 'active' : '' %>">Account Information</a>
+      <a href="/address" class="list-group-item list-group-item-action <%= currentPath === '/address' ? 'active' : '' %>">Address</a>
+      <a href="/orders" class="list-group-item list-group-item-action <%= currentPath === '/orders' ? 'active' : '' %>">My Orders</a>
+      <a href="/wishlist" class="list-group-item list-group-item-action <%= currentPath === '/wishlist' ? 'active' : '' %>">Wishlist</a>
+      <a href="/wallet" class="list-group-item list-group-item-action <%= currentPath === '/wallet' ? 'active' : '' %>">Wallet</a>
+      <a href="/coupons" class="list-group-item list-group-item-action <%= currentPath === '/coupons' ? 'active' : '' %>">My Coupons</a>
+      <a href="/referAndEarn" class="list-group-item list-group-item-action <%= currentPath === '/referAndEarn' ? 'active' : '' %>">Refer & Earn</a>
+      <a href="/logout" class="list-group-item list-group-item-action text-danger <%= currentPath === '/logout' ? 'active' : '' %>">Logout</a>
     </div>
   </div>
 </div>

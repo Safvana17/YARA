@@ -4,7 +4,7 @@ const Category = require('../models/categorySchema')
 const getBestOfferPrice = require('../utils/offerHelper')
 
 
-cron.schedule('*/5 * * * *', async () => {
+cron.schedule('0 * * * *', async () => {
     try {
        const currentDate = new Date()
 
