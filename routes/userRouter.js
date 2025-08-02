@@ -45,7 +45,7 @@ router.get('/auth/google/callback', (req, res, next) => {
                 const redirectUrl = state === 'signup' ? 'signup' : 'login'
                 return res.render(redirectUrl, {message: info?.message || 'Google login failed'})
             }
-            req.session.user = req.user._id
+            req.session.user = user._id
             return res.redirect('/')
     })(req, res, next)
 })
