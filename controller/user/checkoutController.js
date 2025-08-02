@@ -119,24 +119,8 @@ const getAvailableCoupons = async (req, res) => {
     }
 }
 
-//get load checkout
-// const loadCheckoutGet = async (req, res) => {
-//     try {
-//         const userId = req.session.user 
-//         const [user, cart] = await Promise.all([
-//             User.findById(userId),
-//             Cart.findOne({userId}).populate('items.productId')
-//         ])
-
-//         res.render('checkout', {user, cart})
-//     } catch (error) {
-//        console.error('Error while loading checkout page', error)
-//        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'}) 
-//     }
-// }
 module.exports = { 
     loadCheckout,
     removeItem,
     getAvailableCoupons,
-    // loadCheckoutGet
 }

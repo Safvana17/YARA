@@ -108,10 +108,10 @@
           <h5 class="mb-3">Order Summary</h5>
           <p>Total selected Items: <span id="selectedCount"><%= totalItems %></span></p>
           <p><strong>Total Price: ₹<span id="selectedTotal"><%= totalAmount %></span></strong></p>
-          <p><strong>Shipping Charge: ₹<span id="selectedTotal"><%= deliveryCharge %></span></strong></p>
-          <p><strong>Tax: ₹<span id="selectedTotal"><%= tax %></span></strong></p>
+          <p><strong>Shipping Charge: ₹<span id="selectedShipping"><%= deliveryCharge %></span></strong></p>
+          <p><strong>Tax: ₹<span id="selectedTax"><%= tax %></span></strong></p>
           <hr>
-          <p><strong>Total: ₹<span id="selectedTotal"><%= finalAmount %></span></strong></p>
+          <p><strong>Total: ₹<span id="selectedFinal"><%= finalAmount %></span></strong></p>
           <!-- <a href="/checkout" class="btn btn-success w-100 mt-3"><i class="bi bi-bag-check-fill p-2"></i>Proceed to Checkout</a> -->
            <button type="submit" class="btn btn-success w-100 mt-3">
             <i class="bi bi-bag-check-fill p-2"></i>Proceed to Checkout
@@ -131,6 +131,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('cartForm');
+
+    form.addEventListener('submit', function (e) {
+      const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+      if (selectedCheckboxes.length === 0) {
+        e.preventDefault(); // Prevent form submission
+        Swal.fire({
+          icon: 'warning',
+          title: 'Oops',
+          text: 'Please select at least one item to proceed to checkout',
+        });
+      }
+    });
+  });
+</script>
+
+
+<script>
     function updateSummery (){
         const checkbox = document.querySelectorAll('.item-checkbox')
         const subtotals = document.querySelectorAll('.subtotal-value')
@@ -145,8 +164,19 @@
             }
         })
 
+        const deliveryCharge = total > 1000?0:40
+        const tax = Math.ceil(total * 0.03)
+        const finalAmount = total + deliveryCharge + tax
+
         document.getElementById('selectedCount').textContent = selectedCount
         document.getElementById('selectedTotal').textContent = total.toFixed(2)
+        document.getElementById('selectedShipping').textContent = deliveryCharge
+        document.getElementById('selectedTax').textContent = tax
+        document.getElementById('selectedFinal').textContent =finalAmount.toFixed(2)
+
+        const checkoutBtn = document.querySelector('button[type="submit"]');
+        checkoutBtn.disabled = selectedCount === 0;
+
     }
 
     window.addEventListener('load', updateSummery)

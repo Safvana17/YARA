@@ -35,6 +35,7 @@
       <tbody>
         <% cartItems.forEach(item => { %>
           <tr>
+            <input type="hidden" name="selectedItemIds[]" value="<%= item._id %>" />
             <td style="width: 120px;">
               <img src="<%= item.productId.productImage[0] %>" alt="<%= item.productId.name %>" width="100" height="100" class="rounded shadow-sm">
             </td>
@@ -57,7 +58,6 @@
               ₹<%= item.productId.salePrice * item.quantity %>
             </td>
             <td class="text-end">
-              <!-- <a href="/removeItem/<%= item._id %>" class="btn btn-sm btn-outline-danger">Remove</a> -->
               <button type="button" onclick="removeItem('<%= item._id %>')" class="btn btn-sm btn-outline-danger">Delete</button>
             </td>
           </tr>
@@ -238,8 +238,6 @@
   document.getElementById('placeOrderForm').addEventListener('submit', async function (e) {
     e.preventDefault()
   
-    // const placeOrderBtn = document.querySelector('.plceOrderBtn')
-    // placeOrderBtn.disabled = true
     const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
     if (!selectedAddress) {
       return Swal.fire('Please select a shipping address', '', 'warning');
@@ -367,11 +365,15 @@
     try {
       const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked')
       const finalAmount = parseFloat(document.getElementById('finalAmount').value)
+      // Collect selected item IDs
+      const selectedItemInputs = document.querySelectorAll('input[name="selectedItemIds[]"]')
+      const selectedItemIds = Array.from(selectedItemInputs).map(input => input.value)
 
       const body = {
         payment: method,
         selectedAddress: selectedAddress?.value,
-        finalAmount
+        finalAmount,
+        selectedItemIds
       }
 
       // Include Razorpay details if method is razorpay

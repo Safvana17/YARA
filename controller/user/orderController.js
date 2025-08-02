@@ -105,51 +105,53 @@ const verifyPayment = async (req, res) => {
 const placeOrder = async (req, res) => {
     try {
         const userId = req.session.user 
-        const {selectedAddress, payment, razorpay_payment_id, finalAmount} = req.body
-        // const user = await User.findById(userId)
+        const {selectedAddress, payment, razorpay_payment_id, finalAmount, selectedItemIds} = req.body
 
-        // console.log('REQ.BODY:', req.body)
+        if(!selectedItemIds){
+            return res.status(STATUS.BAD_REQUEST).json({sucess: false, message: 'No item selected'})
+        }
 
-
-        // //get address data
-        // const addressDoc = await Address.findOne({userId})
-        const [user, addressDoc] = await Promise.all([
+        const [user, addressDoc, cartDoc] = await Promise.all([
             User.findById(userId),
-            Address.findOne({userId})
+            Address.findOne({userId}),
+            Cart.findOne({userId}).populate('items.productId items.variantId')
         ])
+
 
         const address = addressDoc?.address.id(selectedAddress)
         if(!address){
             return res.status(STATUS.NOT_FOUND).json({success: false, message :'Address is not selected!'})
         }
 
-
-        //get cart data
-        const cartDoc = await Cart.findOne({userId}).populate('items.productId items.variantId')
-        const cartItems = cartDoc ?. items || []
-
-        if(!cartItems.length){
-            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'No items in the cart'})
+        if(!cartDoc || !cartDoc.items.length){
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Cart is empty'})
         }
 
-        //console.log("Selected Address:", selectedAddress)
-        //console.log("AddressDoc:", addressDoc?.address)
+        const selectedCartItems = cartDoc.items.filter(item => 
+            selectedItemIds.includes(item._id.toString())
+        )
+        //get cart data
+        // const cartItems = cartDoc ?. items || []
+
+        if(!selectedCartItems.length){
+            return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Selected items not in the cart'})
+        }
 
         //validate and prepare order
         const orderItems = []
         let subTotal = 0
 
-        for(let item of cartItems){
+        for(let item of selectedCartItems){
             if(item.quantity > item.variantId.stockQuantity){
-                console.log("Payment method received:", payment);
-                console.log("razorpay_payment_id:", razorpay_payment_id);
+                // console.log("Payment method received:", payment);
+                // console.log("razorpay_payment_id:", razorpay_payment_id);
 
                 if(payment === 'razorpay' && razorpay_payment_id){
                     console.log("Initiating refund for paymentId:", razorpay_payment_id, "Amount:", finalAmount*100);
                     console.log('online payment')
                     await refundRazorpayPayment(razorpay_payment_id, finalAmount*100, user )
                 }
-                console.log('online payment2')
+                // console.log('online payment2')
                 return res.status(STATUS.BAD_REQUEST).json({success: false, message :`Insuffiecient stock for product ${item.productId.name}`})
             }
 
@@ -214,9 +216,9 @@ const placeOrder = async (req, res) => {
 
              await user.save()
 
-             console.log('Wallet before deduction:', user.wallet + totalAmount)
-             console.log('Wallet after deduction:', user.wallet)
-             console.log('Saving wallet transaction...')
+            //  console.log('Wallet before deduction:', user.wallet + totalAmount)
+            //  console.log('Wallet after deduction:', user.wallet)
+            //  console.log('Saving wallet transaction...')
 
         }catch(error){
            console.error('Error in wallet selection', error)
@@ -256,7 +258,12 @@ const placeOrder = async (req, res) => {
         ))
 
         //clear cart
-        cartDoc.items = []
+        console.log('Selected Cart Items:', selectedCartItems)  // Should be array of strings
+
+        const selectedItemIdsToRemove = selectedCartItems.map(item => item._id.toString())
+        cartDoc.items = cartDoc.items.filter(item => 
+            !selectedItemIdsToRemove.includes(item._id.toString())
+        )
         await cartDoc.save()
 
         res.status(STATUS.OK).json({success: true, message: 'Order placed', orderId: newOrder._id, user})
