@@ -14,7 +14,7 @@ const loadCustomers = async (req, res) => {
         if(req.query.page){
             page = parseInt(req.query.page)
         }
-        let limit = 3
+        let limit = 8
         const user = await User.find({
             isAdmin: false,
             $or: [

@@ -83,18 +83,18 @@
               </div>
               <div class="col-md-2 text-center">
                 <div class="d-flex justify-content-center align-items-center gap-2">
-                  <button onclick="updateQuantity('<%= item._id %>', -1)" class="btn btn-sm btn-outline-danger">-</button>
+                  <button type="button" onclick="updateQuantity('<%= item._id %>', -1)" class="btn btn-sm btn-outline-danger">-</button>
                   <span><% if(item.variantId.stockQuantity <= 3 && item.quantity > 3) {%>
                       <%= item.variantId.stockQuantity %>
                     <% } else { %>
                       <%= item.quantity %>
                     <% } %>
                    </span>
-                  <button onclick="updateQuantity('<%= item._id %>', 1)" class="btn btn-sm btn-outline-success">+</button>
+                  <button type="button" onclick="updateQuantity('<%= item._id %>', 1)" class="btn btn-sm btn-outline-success">+</button>
                 </div>
               </div>
                 <div class="col-md-1">
-                <button onclick="removeItem('<%= item._id %>')" class="btn btn-sm btn-outline-success mt-2" title="Remove"> <i class="fas fa-trash"></i></button>
+                <button type="button" onclick="removeItem('<%= item._id %>')" class="btn btn-sm btn-outline-success mt-2" title="Remove"> <i class="fas fa-trash"></i></button>
                 <% console.log('Cart item ID:', item._id) %>
 
               </div>

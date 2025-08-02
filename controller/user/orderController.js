@@ -18,6 +18,7 @@ const { count } = require('console')
 const mongoose = require('mongoose')
 const nodemailer = require('nodemailer')
 
+
 //send refund email
 async function sendRefundEmail(paymentId, amount, email) {
     try {
@@ -85,7 +86,7 @@ const verifyPayment = async (req, res) => {
         } = req.body
 
         const generateSignature = crypto
-              .createHmac('sha256', process.env.Razorpay_KEY_SECRET)
+              .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
               .update(`${razorpay_order_id}|${razorpay_payment_id}`)
               .digest('hex')
 

@@ -88,7 +88,8 @@
                 <h5 class="card-title text-success mb-3">
                 <i class="bi bi-ticket-detailed-fill me-2"></i>Special Offer Just for You!
                 </h5>
-                <p class="text-muted mb-4">Use the coupon code below during checkout to save on your next purchase.</p>
+                <p class="text-muted mb-4">Use the coupon code below during checkout to save on your next purchase.</p><br>
+                <strong>Valid on orders above <%= coupons.minOrderAmount %></strong>
 
                 <div class="d-inline-flex align-items-center border border-success rounded px-4 py-2 bg-light">
                 <strong id="couponCode"><%= coupons.code %></strong>
