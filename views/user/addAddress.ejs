@@ -209,7 +209,7 @@
     const data = Object.fromEntries(formData.entries());
 
     try {
-      const response = await fetch('/add-address', {
+      const response = await fetch('/addAddress', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -228,7 +228,7 @@
             showConfirmButton: false
         })
         .then(()=>{
-             window.location.href = '/address';
+             window.location.href = '/checkout';
         })
       } else {
         Swal.fire({
