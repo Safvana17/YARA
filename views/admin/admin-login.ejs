@@ -62,6 +62,10 @@
 
   <div class="login-card">
     <h2>YARA</h2>
+
+    <% if (message) { %>
+      <div class="alert alert-danger text-center mt-2"><%= message %></div>
+    <% } %>
     <form action="/admin/login" method="post">
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>

@@ -7,7 +7,18 @@ const {generatePDF, generateExcel } = require('../../utils/reportUtils')
 
 const loadLogin = async (req, res) => {
     try {
-        res.render('admin-login')
+        if(req.session.admin){
+            return res.redirect('/admin/dashboard')
+        }
+        const error = req.query.error
+        let message = null
+
+        if(error === "invalid"){
+            message = "Invalid email or password"
+        }else if(error === "notfound"){
+            message = 'Admin nor found'
+        }
+        res.render('admin-login',{message})
     } catch (error) {
         res.redirect('/admin/pageerror')
     }
@@ -17,17 +28,19 @@ const login = async (req, res) => {
     try {
         const {email, password} = req.body
         const admin = await User.findOne({email: email, isAdmin: true})
+
         if(admin){
             const passMatch = await bcrypt.compare(password, admin.password)
+            
             if(passMatch){
                 req.session.admin = true
                 req.session.adminId = admin._id
                 return res.redirect('/admin')
             }else{
-                return res.redirect('/admin/login')
+                return res.redirect('/admin/login?error=invalid')
             }
         }else{
-            return res.redirect('/admin/login')
+            return res.redirect('/admin/login?error=notfound')
         }
     } catch (error) {
         console.error('Error while admin login', error)

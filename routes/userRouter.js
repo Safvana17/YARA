@@ -95,7 +95,9 @@ router.patch('/updateQuantity/:id', userAuth, cartController.updateQuantity)
 
 //checkout management
 router.post('/checkout', userAuth, checkoutController.loadCheckout)
-// router.get('/checkout', userAuth, checkoutController.loadCheckoutGet)
+router.get('/addAddress', userAuth, checkoutController.loadAddaddress)
+router.post('/addAddress', userAuth, checkoutController.addAddress)
+router.get('/checkout', userAuth, checkoutController.getCheckout)
 router.delete('/removeItem/:id', userAuth, checkoutController.removeItem)
 router.get('/available-coupons', userAuth, checkoutController.getAvailableCoupons)
 

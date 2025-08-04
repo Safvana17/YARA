@@ -107,6 +107,7 @@ const placeOrder = async (req, res) => {
         const userId = req.session.user 
         const {selectedAddress, payment, razorpay_payment_id, finalAmount, selectedItemIds} = req.body
 
+         delete req.session.selectedItemIds
         if(!selectedItemIds){
             return res.status(STATUS.BAD_REQUEST).json({sucess: false, message: 'No item selected'})
         }
