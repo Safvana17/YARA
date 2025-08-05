@@ -179,7 +179,7 @@ const placeOrder = async (req, res) => {
             if(coupon){
                 coupon.usedCount += 1
 
-                const userEntry = coupon.usedUsers.find(entry => entry?.userId.toString() === userId.toString())
+                const userEntry = coupon.usedUsers.find(entry => entry.userId?.toString() === userId.toString())
                 
                 if(userEntry){
                     userEntry.count += 1
