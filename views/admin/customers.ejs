@@ -30,7 +30,7 @@
       <% } %>
       <% user.forEach((user, index)=> { %>
       <tr>
-        <td><%= (currentPage - 1 ) * 3 + index + 1 %></td>
+        <td><%= (currentPage - 1 ) * 8 + index + 1 %></td>
         <td><%= user.name %></td>
         <td><%= user.email %></td>
         <td><%= user.phone || '-'  %></td>
@@ -59,7 +59,7 @@
     <nav>
       <ul class="pagination justify-content-center">
         <% for(let i=1; i<=totalPages; i++) { %>
-          <li class="page-item <%= i=== currentPage ? 'Active' : '' %>">
+          <li class="page-item <%= i=== currentPage ? 'active' : '' %>">
             <a class="page-link" href="/admin/customers?page=<%= i %>&search=<%= search %>"><%= i %></a>
           </li>
         <% } %>

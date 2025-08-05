@@ -290,10 +290,11 @@ const loadHome = async (req, res) => {
 //loginpage
 const loadLogin = async (req, res) => {
     try {
-        if(req.session.user){
-            return res.redirect('/')
+        if(!req.session.user){
+            return res.render('login')
+        }else {
+            res.redirect('/')
         }
-        res.render('login')
     } catch (error) {
         console.error("Error while loading login page")
         res.redirect('/pageNotFound')

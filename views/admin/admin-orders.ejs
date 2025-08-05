@@ -31,7 +31,7 @@
       <% } %>
       <% orders.forEach((item, index)=> { %>
       <tr>
-        <td><%= (currentPage - 1 ) * 7 + index + 1 %></td>
+        <td><%= (currentPage - 1 ) * 15 + index + 1 %></td>
         <td>#<%= item._id.toString().slice(-6) %></td>
         <td><%= item.userId.name || item.userId.email %></td>
         <td><%= item.createdAt.toDateString()  %></td>
@@ -50,7 +50,7 @@
     <nav>
       <ul class="pagination justify-content-center">
         <% for(let i=1; i<=totalPages; i++) { %>
-          <li class="page-item <%= i=== currentPage ? 'Active' : '' %>">
+          <li class="page-item <%= i=== currentPage ? 'active' : '' %>">
             <a class="page-link" href="/admin/orders?page=<%= i %>&search=<%= search %>"><%= i %></a>
           </li>
         <% } %>

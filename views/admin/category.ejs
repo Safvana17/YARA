@@ -55,7 +55,7 @@
             <% } else { %>
                 <% categories.forEach((cat, index)=> { %>
                 <tr>
-                    <td><%= (currentPage -1) * 3 + index + 1 %></td>
+                    <td><%= (currentPage -1) * 6 + index + 1 %></td>
                     <td><%= cat.name %></td>
                     <td><%= cat.description || 'N/A' %></td>
                     <td><span class="badge <%= cat.isListed ? 'text-success' : 'text-danger' %>">

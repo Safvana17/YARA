@@ -16,6 +16,8 @@ const loadDashboard = async (req, res) => {
     } catch (error) {
         res.redirect('/admin/pageerror')
     }
+   }else{
+    res.redirect('/admin/admin-login')
    }
 }
 

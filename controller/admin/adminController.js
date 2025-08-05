@@ -16,7 +16,7 @@ const loadLogin = async (req, res) => {
         if(error === "invalid"){
             message = "Invalid email or password"
         }else if(error === "notfound"){
-            message = 'Admin nor found'
+            message = 'Admin not found'
         }
         res.render('admin-login',{message})
     } catch (error) {
