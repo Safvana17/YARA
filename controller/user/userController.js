@@ -7,6 +7,7 @@ const Banner = require('../../models/bannerSchema')
 const STATUS = require('../../utils/statusCodes')
 const bcrypt = require('bcrypt')
 const nodemailer = require('nodemailer')
+const Resend = require('resend')
 const env = require('dotenv')
 const { name } = require('ejs')
 
@@ -44,25 +45,23 @@ function generateOtp(){
 
 //send OTP
 async function sentOtpMail(otp, email){
+    const resend = new Resend(process.env.RESEND_API_KEY)
   try{
-     const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        port: 587,
-        secure: false,
-        requireTLS: true,
-        auth: {
-            user: process.env.NODEMAILER_EMAIL,
-            pass: process.env.NODEMAILER_PASSWORD
-        }
-     })
-     const info = await transporter.sendMail({
-        from: process.env.NODEMAILER_EMAIL,
-        to: email,
+     const {data, error} = await resend.emails.send({
+        from: process.env.RESEND_EMAIL,
+        to: 'safvana277@gmail.com',
         subject: `Your OTP Code`,
         text: `Your OTP for sign up is ${otp}`,
         html:`<p>Your <b>OTP</b> is: <strong>${otp}</strong></p>`
      })
-     return info.accepted.length > 0
+     
+     if(error) {
+        console.log("Error sending OTP:", error)
+        return false
+     }
+     console.log("email sent: ", data.id)
+     return true
+     
     }catch(error){
         console.error("error sending otp", error)
     }
