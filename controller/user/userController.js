@@ -7,7 +7,7 @@ const Banner = require('../../models/bannerSchema')
 const STATUS = require('../../utils/statusCodes')
 const bcrypt = require('bcrypt')
 const nodemailer = require('nodemailer')
-const Resend = require('resend')
+const { Resend } = require('resend')
 const env = require('dotenv')
 const { name } = require('ejs')
 
@@ -61,7 +61,7 @@ async function sentOtpMail(otp, email){
      }
      console.log("email sent: ", data.id)
      return true
-     
+
     }catch(error){
         console.error("error sending otp", error)
     }
