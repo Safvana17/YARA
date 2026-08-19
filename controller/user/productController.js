@@ -4,6 +4,8 @@ const ProductVariant = require('../../models/productVariantSchema')
 const Brand = require('../../models/brandSchema')
 const Category = require('../../models/categorySchema')
 const STATUS = require('../../utils/statusCodes')
+const { getFinalOffer } = require('../../utils/getFinalOffer')
+const { getProductPrice } = require('../../utils/productPriceCalculator')
 
 const productDetails = async (req, res) => {
     try {
@@ -25,11 +27,18 @@ const productDetails = async (req, res) => {
             _id: {$ne: productData._id}
         }).limit(8)
 
+
+        const finalOffer = getFinalOffer(productData)
+        
+        const {originalPrice, finalPrice} = getProductPrice(productData, finalOffer)
+
         const totalStock = productVariant.reduce((sum, v) => sum+v.stockQuantity, 0)
         res.render('product-details',{
             user: userData,
             product: productData,
             relatedProducts,
+            finalOffer,
+            finalPrice,
             category: category,
             variants: productVariant,
             totalStock
@@ -40,6 +49,7 @@ const productDetails = async (req, res) => {
     }
     
 }
+
 
 module.exports = {
     productDetails

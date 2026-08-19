@@ -10,6 +10,8 @@ const nodemailer = require('nodemailer')
 const { Resend } = require('resend')
 const env = require('dotenv')
 const { name } = require('ejs')
+const { getProductPrice } = require('../../utils/productPriceCalculator')
+const { getFinalOffer } = require('../../utils/getFinalOffer')
 
 
 //generate referral code
@@ -406,12 +408,33 @@ const loadShoppingPage = async (req, res) => {
 
 
         const totalProducts = await Product.countDocuments(filter)
-        const products = await Product.find(filter).populate('brand').sort(sortOptions).skip(skip).limit(limit)
+        const products = await Product.find(filter)
+            .populate('brand')
+            .populate('category')
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limit)
         const totalPages = Math.ceil( totalProducts / limit )
+        
+        const productsWithOffers = products.map(product => {
+            const productObject = product.toObject()
+
+            const finalOffer = getFinalOffer(productObject)
+
+            const {originalPrice, finalPrice} = getProductPrice(productObject, finalOffer)
+
+            console.log('final price: ', finalPrice)
+
+            return {
+                ...productObject,
+                finalOffer,
+                finalPrice
+            }
+        })
 
         res.render('shop',{
             user: userData,
-            products,
+            products: productsWithOffers,
             category: categories,
             brand: brands,
             totalProducts,
@@ -428,6 +451,7 @@ const loadShoppingPage = async (req, res) => {
         res.redirect('/pageNotFound')
     }
 }
+
 
 
 module.exports = {

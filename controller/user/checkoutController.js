@@ -31,11 +31,9 @@ const loadCheckout = async (req, res) => {
 
         //only filtered items
         const filteredItems = cartItems.filter(item => selectedIds.includes(item._id.toString()))
-
-        console.log('selectedAddress:', selectedAddress)
+        // console.log("filtered items: ", filteredItems)
         
         const subTotal = filteredItems.reduce((acc, curr) => acc + curr.totalPrice, 0)
-        console.log("subtotal:",subTotal)
         const deliveryCharge = subTotal > 1000 ? 0 : 40
         const discount = 0
         const tax = Math.round(subTotal * 0.03) //3% tax
@@ -89,6 +87,7 @@ const getCheckout = async (req, res) => {
         const filteredItems = cartItems.filter((item) =>
             selectedIds.includes(item._id.toString())
         );
+
 
         const subTotal = filteredItems.reduce(
             (acc, curr) => acc + curr.totalPrice,

@@ -56,7 +56,7 @@ const createRazorpayOrder = async (req, res) => {
         }
 
         const order = await razorpayInstance.orders.create(options)
-        res.json(order)
+        res.json({order, key: process.env.RAZORPAY_KEY})
     } catch (error) {
         console.error("Razorpay order error", error)
         res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Razorpay order creation failed'})
@@ -207,12 +207,12 @@ const placeOrder = async (req, res) => {
               user.wallet -= totalAmount
 
             //save wallet transaction
-         user.walletTransaction.push({
-                
+            user.walletTransaction.push({
                 date: Date.now(),
                 amount: totalAmount,
                 status: 'debited',
-                method: "order"
+                method: "order",
+                description: `Amount paid for an order`
             })
 
              await user.save()
@@ -403,66 +403,121 @@ const getAllOrders = async (req, res) => {
 const getInvoice = async (req, res) => {
     try {
         const userId = req.session.user
-        const orderId = req.params.id 
+        const orderId = req.params.id
+
         const user = await User.findById(userId)
 
-        const order = await Order.findOne({_id: orderId, userId}).populate('orderItems.product orderItems.variant')
-        if(!order){
+        const order = await Order.findOne({
+            _id: orderId,
+            userId
+        }).populate('orderItems.product orderItems.variant')
+
+        if (!order) {
             return res.status(404).send('Order not found')
         }
-        if(order.status !== 'Delivered'){
-            return res.status(STATUS.BAD_REQUEST).send('Invoice is only available for delivered item!.')
+
+        // Check whether this order has at least one item
+        // that was actually purchased/processed.
+        console.log("order: ", order)
+        const invoiceItems = order.orderItems.filter(item =>
+            [
+                'Confirmed',
+                'Processing',
+                'Shipped',
+                'Out for delivery',
+                'Delivered',
+                'Return Request',
+            ].includes(item.itemStatus)
+        )
+
+
+        const invoiceSubtotal = invoiceItems.reduce((total, item) => {
+            return total + (item.price * item.quantity)
+        }, 0)
+
+        if (invoiceItems.length === 0) {
+            return res.status(STATUS.BAD_REQUEST)
+                .send('Invoice is not available for this order.')
         }
 
-        console.log(order.orderItems[0].product.productImage[0])
-        if(!order.invoiceDate){
+        
+        if (!order.invoiceDate) {
             order.invoiceDate = new Date()
             await order.save()
         }
 
-        //launch the browser and open a new blank page
         const browser = await puppeteer.launch()
-        const page = await browser.newPage()
 
-        //render ejs invoice to html string
-        const invoicePath = path.join(__dirname,'../../views/user/invoice.ejs')
-        const html = await ejs.renderFile(invoicePath, { order })
+        try {
+            const page = await browser.newPage()
 
-        //set content and generate pdf
-        await page.setContent(html, { waitUntil: 'networkidle0' })
+            const invoicePath = path.join(
+                __dirname,
+                '../../views/user/invoice.ejs'
+            )
 
-        const invoiceDir = path.join(__dirname, "../../public/invoices")
-        if(!fs.existsSync(invoiceDir)){
-            fs.mkdirSync(invoiceDir, {recursive: true})
+            const html = await ejs.renderFile(invoicePath, {
+                order,
+                invoiceItems,
+                user
+            })
+
+            await page.setContent(html, {
+                waitUntil: 'networkidle0'
+            })
+
+            const invoiceDir = path.join(
+                __dirname,
+                '../../public/invoices'
+            )
+
+            if (!fs.existsSync(invoiceDir)) {
+                fs.mkdirSync(invoiceDir, {
+                    recursive: true
+                })
+            }
+
+            const fileName = `invoice-${order.orderId}.pdf`
+
+            const filePath = path.join(
+                invoiceDir,
+                fileName
+            )
+
+            await page.pdf({
+                path: filePath,
+                format: 'A4',
+                printBackground: true,
+                margin: {
+                    top: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    left: '20px'
+                }
+            })
+
+            res.download(filePath, fileName, (err) => {
+                if (err) {
+                    console.error(
+                        'Error sending invoice file',
+                        err
+                    )
+                }
+            })
+
+        } finally {
+            await browser.close()
         }
 
-        const fileName = `invoice-${order.orderId}.pdf`
-        const filePath = path.join(invoiceDir, fileName)
-
-        //send the pdf file
-        await page.pdf({
-            path: filePath,
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '20px',
-                right: '20px',
-                bottom: '20px',
-                left: '20px'
-            }
-        })
-
-        await browser.close()
-
-        res.download(filePath, fileName, (err) =>{
-            if(err){
-                console.error('Error sending file', err)
-                res.status(500).send("Error generating invoice")
-            }
-        })
     } catch (error) {
-        console.error('Error generating invoice', error)
-        res.status(STATUS.INTERNAL_SERVER_ERROR).send('Error generating invoice')
+        console.error(
+            'Error generating invoice',
+            error
+        )
+
+        res.status(
+            STATUS.INTERNAL_SERVER_ERROR
+        ).send('Error generating invoice')
     }
 }
 
@@ -566,9 +621,9 @@ const applyCoupon = async (req, res) => {
     try {
         const {code} = req.body
         const userId = req.session.user.toString()
-        console.log("code:", code)
+
         const coupon = await Coupon.findOne({code: code.toUpperCase(), status: true})
-        console.log('coupons:', coupon)
+
         if(!coupon){
             return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Invalide coupon code'})
         }
@@ -649,15 +704,37 @@ const deleteItemOrder = async (req, res) => {
           $inc: { stockQuantity: item.quantity}
         })
 
+        const itemAmount = item.price * item.quantity
+        const oldTotalPrice = order.totalPrice
+        const oldDiscount = order.discount || 0
+        const oldTax = order.tax || 0
+        const couponBase = oldTotalPrice + oldTax
+
+        let itemDiscount = 0
+        let itemTax = 0
+
+        if(oldTotalPrice > 0) {
+            // itemDiscount = ( itemAmount / oldTotalPrice) * oldDiscount
+            itemTax = ( itemAmount / oldTotalPrice ) * oldTax
+        }
+
+        if(couponBase > 0 && oldDiscount > 0) {
+            const itemCouponBase = itemAmount + itemTax
+            itemDiscount = (itemCouponBase / couponBase) * oldDiscount
+        }
+
+        const refundAmount = itemAmount + itemTax - itemDiscount 
 
         item.itemStatus = 'Cancelled'
         item.itemCancelReason = reason
        
+        order.totalPrice = Math.max(0, order.totalPrice - itemAmount)
+        order.discount = Math.max(0, order.discount - itemDiscount)
+        order.tax = Math.max(0, order.tax - itemTax)
+        order.finalAmount = Math.max(0, order.finalAmount - refundAmount)
 
         if(order.payment === 'razorpay' || order.payment === 'wallet' ){
-            const refundAmount = item.price * item.quantity
             user.wallet += refundAmount
-            order.finalAmount -= refundAmount
 
             user.walletTransaction.push({
                 amount: refundAmount,

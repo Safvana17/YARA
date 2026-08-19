@@ -416,8 +416,8 @@ a:hover {
                       <h5><%= products[i].name %></h5>
                       <p>Brand: <%= products[i].brand.brandName %></p>
                       <p>
-                        ₹<%= products[i].salePrice %>
-                        <span class="text-muted"><s>₹<%= products[i].regularPrice %></s></span>
+                        ₹<%= products[i].finalPrice %>
+                        <span class="text-muted"><s>₹<%= products[i].salePrice %></s></span>
                       </p>
                       <%
                         const regular = products[i].regularPrice;
@@ -425,8 +425,10 @@ a:hover {
                         const discount = regular > sale ? Math.round(((regular - sale) / regular) * 100) : null;
                       %>
                       <p class="text-dark">
-                        <% if (discount) { %>
-                          <span class="text-danger fw-semibold ms-2 small splash-offer"><%= discount %>% OFF</span>
+                        <% if (products[i].finalOffer > 0) { %>
+                            <span class="text-danger fw-semibold ms-2 small splash-offer">
+                                <%= products[i].finalOffer %>% OFF
+                            </span>
                         <% } %>
                       </p>
                     </a>

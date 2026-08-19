@@ -300,40 +300,53 @@
             const result = await res.json()
 
             const options = {
-              key: 'rzp_test_tMAWMle62gK3zO',
-              amount: result.amount.toString(),
-              currency: result.currency,
-              name: 'YARA',
-              description: 'Online payment',
-              order_id: result.id,
-              handler: async function (response) {
-                const verifyRes = await fetch('/verify-payment',{
-                  method: 'POST',
-                  headers: {
-                    'content-type': 'application/json'
-                  },
-                  body: JSON.stringify({
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature
-                  })
-                })
+                key: result.key,
+                amount: result.order.amount.toString(),
+                currency: result.order.currency,
+                name: 'YARA',
+                description: 'Online payment',
+                order_id: result.order.id,
 
-                const verifyResult = await verifyRes.json()
-                if(verifyResult.success){
-                  document.querySelector('.btn-success').disabled = true
-                  const result = await placeOrder('razorpay', response)
-                  handleOrderResult(result)
-                }else{
-                  Swal.fire('Payment verification failed', '', 'error')
+                handler: async function (response) {
+                    const verifyRes = await fetch('/verify-payment', {
+                        method: 'POST',
+                        headers: {
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    })
+
+                    const verifyResult = await verifyRes.json()
+
+                    if (verifyResult.success) {
+                        document.querySelector('.btn-success').disabled = true
+
+                        const result = await placeOrder(
+                            'razorpay',
+                            response
+                        )
+
+                        handleOrderResult(result)
+                    } else {
+                        Swal.fire(
+                            'Payment verification failed',
+                            '',
+                            'error'
+                        )
+                    }
+                },
+
+                theme: {
+                    color: '#3399cc'
                 }
-              },
-              theme: {
-                color: '#3399cc'
-              }
             }
 
             const rzp = new Razorpay(options)
+
             
 
             //razorpay payment failure handling

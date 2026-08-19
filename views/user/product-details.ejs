@@ -103,9 +103,9 @@
         <p class="text-muted"><strong class="text-dark">Category:</strong> <%= category.name %></p>
 
         <div class="d-flex align-items-center mb-3">
-          <h4 class="text-success fw-bold me-3 mb-0">₹<%= product.salePrice %></h4>
+          <h4 class="text-success fw-bold me-3 mb-0">₹<%= finalPrice %></h4>
             <% if(product.salePrice !== product.regularPrice) { %>
-              <span class="text-muted text-decoration-line-through me-2">₹<%= product.regularPrice %></span>
+              <span class="text-muted text-decoration-line-through me-2">₹<%= product.salePrice %></span>
             <% } %>
           
             <%
@@ -114,8 +114,10 @@
               const discount = regular > sale ? Math.round(((regular - sale) / regular) * 100) : null;
             %>
             <p class="text-dark">
-              <% if (discount) { %>
-                <span class="badge bg-warning ms-2 fs-m"><%= discount %>% OFF</span>
+              <% if (finalOffer > 0) { %>
+                  <span class="badge bg-warning ms-2">
+                      <%= finalOffer %>% OFF
+                  </span>
               <% } %>
             </p>
         </div>

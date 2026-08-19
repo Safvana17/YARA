@@ -79,6 +79,7 @@
               <th>Date</th>
               <th>Status</th>
               <th>Method</th>
+              <th>Description</th>
               <th class="text-end">Amount (₹)</th>
             </tr>
           </thead>
@@ -98,6 +99,9 @@
                   <% } %>
                 </td>
                 <td><%= tx.method %></td>
+                <td>
+                    <%= tx.description %>
+                </td>
                 <td class="text-end">₹<%= tx.amount.toFixed(2) %></td>
               </tr>
             <% }) %>

@@ -269,57 +269,146 @@ const cancelReturnRequest = async (req, res) => {
 
 //approve return
 const approveItemReturnRequest = async (req, res) => {
-    console.log('i')
+    console.log('i');
+
     try {
-        const {orderId, itemId} = req.params
+        const { orderId, itemId } = req.params;
+
         console.log("Route Params:", req.params);
 
-        const order = await Order.findById(orderId)
-        const user = await User.findById(order.userId)
-        
-        if(!user){
-            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'User not found'})
-        }
-        
-        if(!order){
-            return res.status(STATUS.NOT_FOUND).json({success: false, message: 'Order not found!'})
+        const order = await Order.findById(orderId);
+
+        if (!order) {
+            return res.status(STATUS.NOT_FOUND).json({
+                success: false,
+                message: 'Order not found!'
+            });
         }
 
-        const item = order.orderItems.id(itemId)
-        if(item.itemStatus !== 'Return Request'){
-           return res.status(STATUS.BAD_REQUEST).json({success: false, message: 'Order is not in return state'})
+        const user = await User.findById(order.userId);
+
+        if (!user) {
+            return res.status(STATUS.NOT_FOUND).json({
+                success: false,
+                message: 'User not found'
+            });
         }
-        //restock product
+
+        const item = order.orderItems.id(itemId);
+
+        if (!item) {
+            return res.status(STATUS.NOT_FOUND).json({
+                success: false,
+                message: 'Item not found!'
+            });
+        }
+
+        if (item.itemStatus !== 'Return Request') {
+            return res.status(STATUS.BAD_REQUEST).json({
+                success: false,
+                message: 'Order is not in return state'
+            });
+        }
+
         await ProductVariant.findByIdAndUpdate(item.variant, {
-            $inc: {stockQuantity: item.quantity}
-        })
+            $inc: {
+                stockQuantity: item.quantity
+            }
+        });
 
-        item.itemStatus = 'Returned'
-       
+        const itemAmount = item.price * item.quantity;
 
-        //credit wallet
-        const refundAmount = item.price * item.quantity
-        user.wallet += refundAmount
-        order.finalAmount -= refundAmount
+        const oldTotalPrice = order.totalPrice;
+        const oldDiscount = order.discount || 0;
+        const oldTax = order.tax || 0;
 
-        user.walletTransaction.push({
-            amount: refundAmount,
-            status: 'credited',
-            method: 'refund',
-            description: `Refund for returned order ${order.orderId}`
-        })
+        const couponBase = oldTotalPrice + oldTax;
 
-        await Promise.all([order.save(), user.save()])
+        let itemDiscount = 0;
+        let itemTax = 0;
 
-        order.status = calculateOrderStatus(order.orderItems.map(i => i.itemStatus));
+        if (oldTotalPrice > 0) {
+            itemTax = (itemAmount / oldTotalPrice) * oldTax;
+        }
+
+        if (couponBase > 0 && oldDiscount > 0) {
+            const itemCouponBase = itemAmount + itemTax;
+
+            itemDiscount =
+                (itemCouponBase / couponBase) * oldDiscount;
+        }
+
+        const refundAmount =
+            itemAmount + itemTax - itemDiscount;
+
+        item.itemStatus = 'Returned';
+
+        order.totalPrice = Math.max(
+            0,
+            order.totalPrice - itemAmount
+        );
+
+        order.discount = Math.max(
+            0,
+            order.discount - itemDiscount
+        );
+
+        order.tax = Math.max(
+            0,
+            order.tax - itemTax
+        );
+
+        order.finalAmount = Math.max(
+            0,
+            order.finalAmount - refundAmount
+        );
+
+        if (
+            order.payment === 'razorpay' ||
+            order.payment === 'wallet'
+        ) {
+            user.wallet += refundAmount;
+
+            user.walletTransaction.push({
+                amount: refundAmount,
+                status: 'credited',
+                method: 'refund',
+                description:
+                    `Refund for returned order ${order.orderId}.`
+            });
+
+            await Promise.all([
+                user.save(),
+                order.save()
+            ]);
+        } else {
+            await order.save();
+        }
+
+        order.status = calculateOrderStatus(
+            order.orderItems.map(i => i.itemStatus)
+        );
+
         await order.save();
-        
-        res.status(STATUS.OK).json({success: true, message: 'Item return request approved!'})
+
+        return res.status(STATUS.OK).json({
+            success: true,
+            message: 'Item return request approved!',
+            refundAmount: Math.round(refundAmount * 100) / 100
+        });
+
     } catch (error) {
-        console.error('Error while approving return request', error)
-        res.status(STATUS.INTERNAL_SERVER_ERROR).json({success: false, message: 'Internal server error'})
+        console.error(
+            'Error while approving return request',
+            error
+        );
+
+        return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: 'Internal server error'
+        });
     }
-}
+};
 
 //cancel return request
 const cancelItemReturnRequest = async (req, res) => {

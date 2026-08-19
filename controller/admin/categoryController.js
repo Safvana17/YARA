@@ -143,7 +143,7 @@ const addOffer = async (req, res) => {
         category.categoryOffer = offerValue
         category.offerStartDate = start
         category.offerEndDate = end
-        category.isOfferActive = false
+        category.isOfferActive = true
         await category.save()
 
         res.status(STATUS.OK).json({success: true, message: 'Offer addedd/scheduled successfully.'})

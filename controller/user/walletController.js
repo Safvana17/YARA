@@ -36,7 +36,7 @@ const getAddMoneyWallet = async (req, res) => {
     try {
         const userId = req.session.user 
         const user = await User.findById(userId)
-        res.render('add-wallet-money', {user})
+        res.render('add-wallet-money', {user, key: process.env.RAZORPAY_KEY})
     } catch (error) {
         console.error('Error while loading add wallet money page', error)
         res.redirect('/pageNotFound')
@@ -81,7 +81,8 @@ const verifyWalletPayment = async (req, res) => {
                 date: new Date(),
                 status: "credited",
                 amount,
-                method: 'razorpay'
+                method: 'razorpay',
+                description: `${amount} added to wallet through razorpay`
             })
 
             await user.save()

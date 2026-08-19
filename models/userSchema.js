@@ -45,6 +45,7 @@ const userSchema = new Schema({
       status: {type: String, enum: ['credited', 'debited'], required: true},//added, refund, used for order
       amount: {type: Number, required: true},
       method: {type: String, enum: ['razorpay', 'order', 'refund', 'admin', 'reward'], default: 'order'},
+      orderId: {type: String},
       description: {type: String}
     }
   ],

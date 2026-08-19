@@ -4,15 +4,20 @@ const ProductVariant = require('../../models/productVariantSchema')
 const User = require('../../models/userSchema')
 const STATUS = require('../../utils/statusCodes')
 const mongoose = require('mongoose')
+const { getFinalOffer} = require('../../utils/getFinalOffer')
+const { getProductPrice } = require('../../utils/productPriceCalculator')
 
 
 const getCartPage = async (req, res) => {
     try {
+
         const userId = req.session.user
+
         const user = await User.findById(userId)
-                .populate({
-                    path: 'cart',
-                    populate: [{
+            .populate({
+                path: 'cart',
+                populate: [
+                    {
                         path: 'items.productId',
                         populate: {
                             path: 'category',
@@ -20,72 +25,127 @@ const getCartPage = async (req, res) => {
                         }
                     },
                     {
-                        path: 'items.variantId',
-                    }]
-                })
+                        path: 'items.variantId'
+                    }
+                ]
+            })
 
-                console.log("username2:",user.name)
         const cartDoc = user.cart[0]
-        if(!cartDoc || cartDoc.items.length === 0){
+
+        if (!cartDoc || cartDoc.items.length === 0) {
             return res.render('cart', {
                 user,
                 cartItems: [],
+                totalItems: 0,
                 grandTotal: 0,
+                deliveryCharge: 0,
+                tax: 0,
+                finalAmount: 0,
                 message: "There is nothing in your cart. Let's add some items."
             })
         }
 
         const validCartItems = []
-        for(let i= cartDoc.items.length-1; i>=0; i--){
+
+        for (let i = cartDoc.items.length - 1; i >= 0; i--) {
+
             const item = cartDoc.items[i]
 
-            if(!item.variantId || (item.variantId.stockQuantity === 0 || item.quantity > item.variantId.stockQuantity)){
-                if(item.variantId && item.variantId.stockQuantity === 0){
-                    cartDoc.items.splice(i, 1)
-                }else if(item.variantId){
-                    item.quantity = item.variantId.stockQuantity
-                    item.totalPrice = item.price * item.quantity;
-                }
-            }else if( 
-                item.productId &&
-                !item.productId.isBlocked &&
-                item.productId.category?.isListed &&
-                item.variantId.stockQuantity > 0
-              ){
-                validCartItems.push(item)
+            // Invalid variant
+            if (!item.variantId) {
+                cartDoc.items.splice(i, 1)
+                continue
             }
+
+            // Out of stock
+            if (item.variantId.stockQuantity === 0) {
+                cartDoc.items.splice(i, 1)
+                continue
+            }
+
+            // Quantity exceeds stock
+            if (item.quantity > item.variantId.stockQuantity) {
+                item.quantity = item.variantId.stockQuantity
+            }
+
+            // Invalid product
+            if (
+                !item.productId ||
+                item.productId.isBlocked ||
+                !item.productId.category?.isListed
+            ) {
+                continue
+            }
+
+            // --------------------------------
+            // GET CURRENT OFFER
+            // --------------------------------
+
+            const finalOffer = getFinalOffer(item.productId)
+
+            const { finalPrice } = getProductPrice(
+                item.productId,
+                finalOffer
+            )
+
+            // --------------------------------
+            // UPDATE CURRENT CART PRICE
+            // --------------------------------
+
+            item.price = finalPrice
+            item.totalPrice = finalPrice * item.quantity
+
+            validCartItems.push(item)
         }
 
-        
         await cartDoc.save()
 
+        // --------------------------------
+        // CART TOTAL
+        // --------------------------------
 
-       const grandTotal = validCartItems.reduce((total, item) => total + item.totalPrice, 0)
-       const totalItems = validCartItems.reduce((total, item) => total + item.quantity, 0)
-       const deliveryCharge = grandTotal > 1000 ? 0 : 40
-       const tax = Math.round(grandTotal * 0.03) //3% tax
-       const discount = 0
-       const finalAmount = grandTotal + deliveryCharge + tax - discount
-       console.log("total:", grandTotal)
-       console.log("items:", totalItems)
+        const grandTotal = validCartItems.reduce(
+            (total, item) => total + Number(item.totalPrice),
+            0
+        )
 
+        const totalItems = validCartItems.reduce(
+            (total, item) => total + item.quantity,
+            0
+        )
 
-       req.session.cartTotal = grandTotal
+        const deliveryCharge = grandTotal > 1000 ? 0 : 40
 
+        const tax = Math.round(grandTotal * 0.03)
 
-       console.log("username1:",user.name)
-       res.render('cart', {
-        user,
-        cartItems: validCartItems,
-        totalItems,
-        deliveryCharge,
-        totalAmount: grandTotal,
-        tax,
-        finalAmount,
-        message: ''
-       })
+        const discount = 0
+
+        const finalAmount =
+            grandTotal +
+            deliveryCharge +
+            tax -
+            discount
+
+        req.session.cartTotal = grandTotal
+
+        res.render('cart', {
+            user,
+            cartItems: validCartItems,
+            totalItems,
+            deliveryCharge,
+            totalAmount: grandTotal,
+            tax,
+            finalAmount,
+            message: ''
+        })
+
     } catch (error) {
-        console.error('error while loading cart page', error)
+
+        console.error(
+            'error while loading cart page',
+            error
+        )
+
         res.redirect('/pageNotFound')
     }
 }
@@ -97,7 +157,7 @@ const addToCart = async (req, res) => {
     const {productId, variantId} = req.body
 
     const [product, variant] = await Promise.all([ 
-        Product.findById(productId),
+        Product.findById(productId).populate('category'),
         ProductVariant.findById(variantId)
     ])
 
@@ -146,12 +206,15 @@ const addToCart = async (req, res) => {
         cartDoc.markModified('items')
         await cartDoc.save()
     }else{
+        const finalOffer = getFinalOffer(product)
+        const { originalPrice, finalPrice } = getProductPrice(product, finalOffer)
+        console.log("final price: ", finalOffer, finalPrice, product)
         cartDoc.items.push({
             productId,
             variantId, 
             quantity: 1, 
-            price: Number(product.salePrice), 
-            totalPrice: Number(product.salePrice * 1)
+            price: finalPrice, 
+            totalPrice: finalPrice
         })
         
         await cartDoc.save()
@@ -245,6 +308,7 @@ const updateQuantity = async (req, res) => {
         }
 
         //update and save
+        console.log("from update quantity: ", newQty, item, )
         item.quantity = newQty
         item.totalPrice = item.price * newQty
 

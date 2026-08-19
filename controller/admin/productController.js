@@ -417,7 +417,7 @@ const addOffer = async (req, res) => {
         product.productOffer = offerValue
         product.offerStartDate = start
         product.offerEndDate = end
-        product.isOfferActive = false
+        product.isOfferActive = true
 
         
         await product.save()

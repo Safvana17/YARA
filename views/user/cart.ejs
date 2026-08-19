@@ -76,9 +76,9 @@
                 <div class="card-body">
                   <h5 class="card-title mb-2"><%= item.productId.name %></h5>
                   <p class="mb-1">Size: <%= item.variantId.size %></p>
-                  <p class="mb-1">Price: ₹<span class="subtotal"><%= item.productId.salePrice %></span></p>
-                  <p class="mb-1">Subtotal: ₹<%= item.productId.salePrice * item.quantity %></p>
-                  <input type="hidden" class="subtotal-value" value="<%= item.productId.salePrice * item.quantity %>">
+                  <p class="mb-1">Price: ₹<span class="subtotal"><%= item.price %></span></p>
+                  <p class="mb-1">Subtotal: ₹<%= item.totalPrice %></p>
+                  <input type="hidden" class="subtotal-value" value="<%= item.totalPrice %>">
                 </div>
               </div>
               <div class="col-md-2 text-center">
