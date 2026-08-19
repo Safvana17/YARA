@@ -105,7 +105,7 @@
         <div class="d-flex align-items-center mb-3">
           <h4 class="text-success fw-bold me-3 mb-0">₹<%= finalPrice %></h4>
             <% if(product.salePrice !== product.regularPrice) { %>
-              <span class="text-muted text-decoration-line-through me-2">₹<%= product.salePrice %></span>
+              <span class="text-muted text-decoration-line-through me-2">₹<%= product.baseSalePrice %></span>
             <% } %>
           
             <%
