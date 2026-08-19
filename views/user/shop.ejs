@@ -417,7 +417,7 @@ a:hover {
                       <p>Brand: <%= products[i].brand.brandName %></p>
                       <p>
                         ₹<%= products[i].finalPrice %>
-                        <span class="text-muted"><s>₹<%= products[i].salePrice %></s></span>
+                        <span class="text-muted"><s>₹<%= products[i].baseSalePrice %></s></span>
                       </p>
                       <%
                         const regular = products[i].regularPrice;
