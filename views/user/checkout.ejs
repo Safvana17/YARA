@@ -124,10 +124,20 @@
           <input type="hidden" id="walletAmount" name="walletAmount" value="<%= user.wallet %>">
         </div>
       </div>
-      
+  
 
       <!-- Order Summary -->
       <div class="col-md-5">
+          <!-- Coupon Section -->
+        <div class="card shadow-sm p-4 mb-4 w-100">
+          <h5 class="mb-3">Apply Coupon</h5>
+          <div class="input-group">
+            <input type="text" id="couponCode" class="form-control" placeholder="Enter coupon code"
+            <%= appliedCoupon ? 'value="'+ appliedCoupon.code+ '" disabled': '' %>>
+            <button type="button" class="btn btn-success" id="applyBtn" onclick="toggleCoupon()"><%= appliedCoupon ? 'Remove Coupon' : 'Apply' %></button>
+          </div>
+          <small id="couponMessage" class="mt-2 d-block"><% if(appliedCoupon){ %> Coupon "<%= appliedCoupon.code %>" applied! <% } %></small>
+        </div>
         <div class="card shadow-sm p-4">
           <h5 class="mb-3">Order Summary</h5>
 
@@ -166,18 +176,6 @@
       </div>
     </div>
   </form>
-  <!-- Coupon Section -->
- <div class="col-md-5 mt-5">
-<div class="card shadow-sm p-4 mb-4">
-  <h5 class="mb-3">Apply Coupon</h5>
-  <div class="input-group">
-    <input type="text" id="couponCode" class="form-control" placeholder="Enter coupon code"
-    <%= appliedCoupon ? 'value="'+ appliedCoupon.code+ '" disabled': '' %>>
-    <button type="button" class="btn btn-success" id="applyBtn" onclick="toggleCoupon()"><%= appliedCoupon ? 'Remove Coupon' : 'Apply' %></button>
-  </div>
-  <small id="couponMessage" class="mt-2 d-block"><% if(appliedCoupon){ %> Coupon "<%= appliedCoupon.code %>" applied! <% } %></small>
-</div>
-</div>
 </div>
 
 
