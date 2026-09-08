@@ -133,7 +133,7 @@
       isValid = false
     }
 
-    if(!discountValue.trim() || isNaN(discountValue) || discountValue <= 0){
+    if(!discountValue.trim() || isNaN(discountValue) || discountValue <= 0 || discountValue >= 91){
       error3.innerText = ' Please enter valid discount value'
       isValid = false
     }
