@@ -8,7 +8,7 @@ const {generatePDF, generateExcel } = require('../../utils/reportUtils')
 const loadLogin = async (req, res) => {
     try {
         if(req.session.admin){
-            return res.redirect('/admin/dashboard')
+            return res.redirect('/admin')
         }
         const error = req.query.error
         let message = null
